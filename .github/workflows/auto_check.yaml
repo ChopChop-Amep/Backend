@@ -1,0 +1,44 @@
+name: Code autocheck
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi psycopg2-binary autopep8 flake8 bandit pytest
+
+      - name: Check formatting
+        run: |
+          autopep8 --in-place --recursive src/
+          git diff --exit-code || (echo "You must format the code before pushing to remote!" && exit 1)
+
+      - name: Check lints
+        run: |
+          flake8 .
+
+      - name: Check for vulnerabilities
+        run: |
+          bandit -r . -ll
+      
+      # We can enable this later when we have something to test. Otherwise the pipeline will fail
+      # - name: Run tests
+      #   run: |
+      #     pytest
