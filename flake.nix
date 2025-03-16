@@ -17,6 +17,7 @@
                     fastapi
                     psycopg
                     pydantic
+                    pyjwt
                 ];
 
                 dev_tools = with pkgs.python312Packages; [
