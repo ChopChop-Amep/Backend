@@ -2,9 +2,7 @@ __version__ = "0.1.0"
 
 from fastapi import FastAPI
 
-app = FastAPI()
+from api.product.post import router as product_post_router
 
-
-@app.get("/")
-def get_root():
-    return {"Hello": "World", "Programmed": "To work", "But not": "To feel"}
+api = FastAPI()
+api.include_router(product_post_router)

@@ -16,6 +16,7 @@
                 dependencies = with pkgs.python312Packages; [
                     fastapi
                     psycopg
+                    pydantic
                 ];
 
                 dev_tools = with pkgs.python312Packages; [
