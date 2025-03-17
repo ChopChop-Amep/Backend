@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from psycopg import sql
 
 from model import VerifiedProduct, SecondHandProduct
 from auth import get_current_user, TokenData
+from database import get_db_connection
 
 router = APIRouter()
 
@@ -12,7 +14,22 @@ router = APIRouter()
 async def post_verified_product(
     product: VerifiedProduct, current_user: TokenData = Depends(get_current_user)
 ):
-    return {"message": "Product created", "product": product}
+    try:
+        conn = get_db_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL(
+                        "TODO!"
+                    ),
+                    (product.name, product.description, product.price),
+                )
+                product_id = cursor.fetchone()[0]
+        return {"message": "Product created", "product_id": product_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 
 @router.post(
