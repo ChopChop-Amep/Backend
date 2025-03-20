@@ -19,9 +19,7 @@ async def post_verified_product(
         with conn:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    sql.SQL(
-                        "TODO!"
-                    ),
+                    sql.SQL("TODO!"),
                     (product.name, product.description, product.price),
                 )
                 product_id = cursor.fetchone()[0]
@@ -35,5 +33,20 @@ async def post_verified_product(
 @router.post(
     "/product/secondhand", description="Post a new second hand product to the database"
 )
-async def post_secondhand_product(product: SecondHandProduct):
-    return {"message": "Product created", "product": product}
+async def post_secondhand_product(
+    product: SecondHandProduct, current_user: TokenData = Depends(get_current_user)
+):
+    try:
+        conn = get_db_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL("TODO!"),
+                    (product.name, product.description, product.price),
+                )
+                product_id = cursor.fetchone()[0]
+        return {"message": "Product created", "product_id": product_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
