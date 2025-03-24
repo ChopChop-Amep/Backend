@@ -1,10 +1,11 @@
-__version__ = "0.1.0"
+__version__ = "0.1.3"
 
 from fastapi import FastAPI
 
-app = FastAPI()
+from api.product.get import router as product_get_router
+from api.product.delete import router as product_delete_router
 
+api = FastAPI()
 
-@app.get("/")
-def get_root():
-    return {"Hello": "World", "Programmed": "To work", "But not": "To feel"}
+api.include_router(product_get_router)
+api.include_router(product_delete_router)

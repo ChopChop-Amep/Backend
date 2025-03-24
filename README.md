@@ -4,6 +4,7 @@
 ## Setup
  - Install the Nix package manager on your system. [**[Instructions »]**](https://nixos.org/download/)
  - Run `nix develop --experimental-features 'nix-command flakes'` to enter the developement environment
+ - Add the authentication secret key to your environment: `export SECRET_KEY="secret_key_here!"`
 
 ## Run
 You can run a developement instance of the project with the following command:
