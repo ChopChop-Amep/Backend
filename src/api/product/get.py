@@ -1,8 +1,9 @@
-# LA QUERY ES NOMES PER PRODUCTES VERIFICATS, CAL CANVIARHO
+# - LA QUERY ES NOMES PER PRODUCTES VERIFICATS, CAL CANVIARHO
 
-# DEPEN DE LES CLASES DE PRODUCTES QUE TENEN UN ATRIBUT "cahtegory", OJO SI ES CORREGEIX
+# - DEPEN DE LES CLASES DE PRODUCTES
+#  QUE TENEN UN ATRIBUT "cahtegory", OJO SI ES CORREGEIX
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from psycopg import sql
 import uuid
 
@@ -11,7 +12,8 @@ from database import get_db_connection
 router = APIRouter()
 
 
-@router.get("/product/{product_id}", description="Get detailed information of a specific product")
+@router.get("/product/{product_id}",
+            description="Get detailed information of a specific product")
 async def get_product(
     product_id: uuid
 ):
