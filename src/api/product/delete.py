@@ -7,6 +7,7 @@ from database import get_db_connection
 
 router = APIRouter()
 
+
 @router.delete(
     "/product/delete", description="Delete a product from the database"
 )
@@ -23,7 +24,8 @@ async def delete_product(
                 )
                 deleted_id = cursor.fetchone()
                 if not deleted_id:
-                    raise HTTPException(status_code=404, detail="Product not found")
+                    raise HTTPException(
+                        status_code=404, detail="Product not found")
         return {"message": "Product deleted", "product_id": product_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
