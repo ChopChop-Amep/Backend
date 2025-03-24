@@ -9,7 +9,7 @@ from database import get_db_connection
 router = APIRouter()
 
 
-@router.delete("/product/delete/{product_id}", description="Delete a product")
+@router.delete("/product/{product_id}", description="Delete a product")
 async def delete_product(product_id: UUID, user_id: UUID = Depends(authenticate)):
     try:
         conn = get_db_connection()
@@ -17,7 +17,7 @@ async def delete_product(product_id: UUID, user_id: UUID = Depends(authenticate)
             with conn.cursor() as cursor:
                 cursor.execute(
                     sql.SQL(
-                        "DELETE FROM VerifiedProduct WHERE vp_id = %s AND vp_owner = %s RETURNING id"
+                        "DELETE FROM chopchop.verified_product WHERE vp_id = %s AND vp_owner = %s RETURNING id"
                     ),
                     (product_id, user_id),
                 )
@@ -27,7 +27,7 @@ async def delete_product(product_id: UUID, user_id: UUID = Depends(authenticate)
                 if not deleted_id:
                     cursor.execute(
                         sql.SQL(
-                            "DELETE FROM SecondHandProduct WHERE sp_id = %s AND sp_owner = %s RETURNING id"
+                            "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s AND sp_owner = %s RETURNING id"
                         ),
                         (product_id, user_id),
                     )
@@ -35,8 +35,7 @@ async def delete_product(product_id: UUID, user_id: UUID = Depends(authenticate)
 
                 # If it wasn't a SecondHandProduct either, it's either not an existing product or the user doesn't have permission to delete it. Return an error.
                 if not deleted_id:
-                    raise HTTPException(
-                        status_code=404, detail="Product not found")
+                    raise HTTPException(status_code=404, detail="Product not found")
 
         return Response(status_code=200)
 
