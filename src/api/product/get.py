@@ -1,59 +1,80 @@
-# - LA QUERY ES NOMES PER PRODUCTES VERIFICATS, CAL CANVIARHO
-
-# - DEPEN DE LES CLASES DE PRODUCTES
-#  QUE TENEN UN ATRIBUT "cahtegory", OJO SI ES CORREGEIX
+import uuid
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from psycopg import sql
-import uuid
 
 from database import get_db_connection
+from model.product import JsonProduct, ProductType
 
 router = APIRouter()
 
 
-@router.get("/product/{product_id}",
-            description="Get detailed information of a specific product")
-async def get_product(
-    product_id: uuid
-):
+@router.get(
+    "/product/{product_id}",
+    description="Get detailed information of a specific product",
+)
+async def get_product(product_id: uuid):
     try:
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
-                query = sql.SQL(
+                query_verified = sql.SQL(
                     """
-                    SELECT *
-                    FROM verified_products
-                    WHERE uuid = %s;
+                    SELECT vp_id, vp_owner, vp_sku, vp_name, vp_description, vp_stock, vp_price, vp_image, vp_category, vp_sold
+                    FROM VerifiedProduct
+                    WHERE vp_id = %s;
                     """
                 )
-                cursor.execute(query, (product_id,))
+                cursor.execute(query_verified, (product_id,))
                 result = cursor.fetchone()
-                if not result:
-                    raise HTTPException(
-                        status_code=404, detail="Product not found")
 
-                if len(result) == 8:
-                    product = {
-                        "uuid": result[0],
-                        "sku": result[1],
-                        "name": result[2],
-                        "description": result[3],
-                        "cahtegory": result[4],
-                        "stock": result[5],
-                        "price": result[6],
-                        "image": result[7]
-                    }
-                else:
-                    product = {
-                        "uuid": result[0],
-                        "name": result[1],
-                        "description": result[2],
-                        "cahtegory": result[3],
-                        "price": result[4],
-                        "image": result[5]
-                    }
+                if result:
+                    product = JsonProduct(
+                        _type=ProductType.VERIFIED,
+                        _id=result[0],
+                        owner=result[1],
+                        sku=result[2],
+                        name=result[3],
+                        description=result[4],
+                        stock=result[5],
+                        price=result[6],
+                        image=result[7],
+                        category=result[8],
+                        sold=result[9],
+                    )
+                    return product
+
+                # If it's not a VerifiedProduct, it probably is a SecondHandProduct
+                query_second_hand = sql.SQL(
+                    """
+                    SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category
+                    FROM SecondHandProduct
+                    WHERE sp_id = %s;
+                    """
+                )
+                cursor.execute(query_second_hand, (product_id,))
+                result = cursor.fetchone()
+
+                if result:
+                    product = JsonProduct(
+                        _type=ProductType.VERIFIED,
+                        _id=result[0],
+                        owner=result[1],
+                        sku=None,
+                        name=result[2],
+                        description=result[3],
+                        stock=None,
+                        price=result[4],
+                        image=result[5],
+                        category=result[6],
+                        sold=None,
+                    )
+                    return product
+
+                # If it's not in either, then it doesn't exist
+                raise HTTPException(
+                    status_code=404, detail="Product not found")
 
         return product
     except Exception as e:
