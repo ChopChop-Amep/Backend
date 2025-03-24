@@ -1,11 +1,10 @@
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from psycopg import sql
 
 from database import get_db_connection
-from model.product import JsonProduct, ProductType
+from model.product import Product
 
 router = APIRouter()
 
@@ -30,8 +29,8 @@ async def get_product(product_id: uuid):
                 result = cursor.fetchone()
 
                 if result:
-                    product = JsonProduct(
-                        _type=ProductType.VERIFIED,
+                    product = Product(
+                        _type=Product.ProductType.VERIFIED,
                         _id=result[0],
                         owner=result[1],
                         sku=result[2],
@@ -57,8 +56,8 @@ async def get_product(product_id: uuid):
                 result = cursor.fetchone()
 
                 if result:
-                    product = JsonProduct(
-                        _type=ProductType.VERIFIED,
+                    product = Product(
+                        _type=Product.ProductType.VERIFIED,
                         _id=result[0],
                         owner=result[1],
                         sku=None,
