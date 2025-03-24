@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from psycopg import sql
 
 from auth import authenticate, User
@@ -38,7 +38,7 @@ async def delete_product(product_id: UUID, user: User = Depends(authenticate)):
                     raise HTTPException(
                         status_code=404, detail="Product not found")
 
-        return {"product_id": product_id}
+        return Response(status_code=200)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
