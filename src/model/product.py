@@ -38,8 +38,8 @@ class Product(BaseModel):
         VERIFIED = "verified"
         SECONDHAND = "secondhand"
 
-    _type: ProductType = Field(..., alias="type")
-    _id: UUID = Field(..., alias="id")
+    type_: ProductType = Field(..., alias="type")
+    id_: UUID = Field(..., alias="id")
     owner: UUID
     sku: Optional[str]
     name: str

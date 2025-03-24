@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 from psycopg import sql
@@ -13,7 +13,7 @@ router = APIRouter()
     "/product/{product_id}",
     description="Get detailed information of a specific product",
 )
-async def get_product(product_id: uuid):
+async def get_product(product_id: UUID):
     try:
         conn = get_db_connection()
         with conn:
@@ -21,7 +21,7 @@ async def get_product(product_id: uuid):
                 query_verified = sql.SQL(
                     """
                     SELECT vp_id, vp_owner, vp_sku, vp_name, vp_description, vp_stock, vp_price, vp_image, vp_category, vp_sold
-                    FROM VerifiedProduct
+                    FROM chopchop.verified_product
                     WHERE vp_id = %s;
                     """
                 )
@@ -30,8 +30,8 @@ async def get_product(product_id: uuid):
 
                 if result:
                     product = Product(
-                        _type=Product.ProductType.VERIFIED,
-                        _id=result[0],
+                        type_=Product.ProductType.VERIFIED,
+                        id_=result[0],
                         owner=result[1],
                         sku=result[2],
                         name=result[3],
@@ -48,7 +48,7 @@ async def get_product(product_id: uuid):
                 query_second_hand = sql.SQL(
                     """
                     SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category
-                    FROM SecondHandProduct
+                    FROM chopchop.secondhand_product
                     WHERE sp_id = %s;
                     """
                 )
@@ -57,8 +57,8 @@ async def get_product(product_id: uuid):
 
                 if result:
                     product = Product(
-                        _type=Product.ProductType.VERIFIED,
-                        _id=result[0],
+                        type_=Product.ProductType.VERIFIED,
+                        id_=result[0],
                         owner=result[1],
                         sku=None,
                         name=result[2],
@@ -72,8 +72,7 @@ async def get_product(product_id: uuid):
                     return product
 
                 # If it's not in either, then it doesn't exist
-                raise HTTPException(
-                    status_code=404, detail="Product not found")
+                raise HTTPException(status_code=404, detail="Product not found")
 
         return product
     except Exception as e:
