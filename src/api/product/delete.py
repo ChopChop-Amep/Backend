@@ -3,23 +3,23 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response
 from psycopg import sql
 
-from auth import authenticate, User
+from auth import authenticate
 from database import get_db_connection
 
 router = APIRouter()
 
 
 @router.delete("/product/delete/{product_id}", description="Delete a product")
-async def delete_product(product_id: UUID, user: User = Depends(authenticate)):
+async def delete_product(product_id: UUID, user_id: UUID = Depends(authenticate)):
     try:
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     sql.SQL(
-                        "DELETE FROM VerifiedProduct WHERE id = %s AND vp_owner = %s RETURNING id"
+                        "DELETE FROM VerifiedProduct WHERE vp_id = %s AND vp_owner = %s RETURNING id"
                     ),
-                    (product_id, user.id),
+                    (product_id, user_id),
                 )
                 deleted_id = cursor.fetchone()
 
@@ -27,9 +27,9 @@ async def delete_product(product_id: UUID, user: User = Depends(authenticate)):
                 if not deleted_id:
                     cursor.execute(
                         sql.SQL(
-                            "DELETE FROM SecondHandProduct WHERE id = %s AND vp_owner = %s RETURNING id"
+                            "DELETE FROM SecondHandProduct WHERE sp_id = %s AND sp_owner = %s RETURNING id"
                         ),
-                        (product_id, user.id),
+                        (product_id, user_id),
                     )
                     deleted_id = cursor.fetchone()
 
