@@ -1,11 +1,13 @@
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 from fastapi import FastAPI
 
 from api.product.get import router as product_get_router
 from api.product.delete import router as product_delete_router
+from api.product.post import router as product_post_router
 
 api = FastAPI()
 
 api.include_router(product_get_router)
 api.include_router(product_delete_router)
+api.include_router(product_post_router)
