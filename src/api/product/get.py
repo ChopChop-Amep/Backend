@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 
 from database import get_db_connection
-from model.product import Product
+from model.product.product import Product
 
 router = APIRouter()
 

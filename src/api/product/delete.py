@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from auth import authenticate
 from database import get_db_connection
 from model.user import User
-from model.user import Product
+from model.product.product import Product
 
 router = APIRouter()
 

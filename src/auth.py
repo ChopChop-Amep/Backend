@@ -5,7 +5,7 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-from model.user import User
+from model.user import User, Particular, Professional, Enterprise, Admin
 
 SECRET_KEY = os.getenv("SECRET_KEY", "Secret key missing!!")
 ALGORITHM = "HS256"
@@ -18,20 +18,37 @@ def verify_jwt_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         type_ = User.Type(payload.get("type"))
-        nif = None
 
-        if type_ in User.VERIFIED_TYPES:
-            nif = payload.get("nif")
+        match type_:
+            case User.Type.PARTICULAR:
+                return Particular(
+                    id_=UUID(payload.get("sub")),
+                    name=payload.get("name"),
+                    surname=payload.get("surname"),
+                )
 
-        user = User(
-            id_=UUID(payload.get("sub")),
-            name=payload.get("name"),
-            surname=payload.get("surname"),
-            type_=type_,
-            nif=nif,
-        )
+            case User.Type.PROFESSIONAL:
+                return Professional(
+                    id_=UUID(payload.get("sub")),
+                    name=payload.get("name"),
+                    surname=payload.get("surname"),
+                    nif=payload.get("nif"),
+                )
 
-        return user
+            case User.Type.ENTERPRISE:
+                return Enterprise(
+                    id_=UUID(payload.get("sub")),
+                    name=payload.get("name"),
+                    surname=payload.get("surname"),
+                    nif=payload.get("nif"),
+                )
+
+            case User.Type.ADMIN:
+                return Admin(
+                    id_=UUID(payload.get("sub")),
+                    name=payload.get("name"),
+                    surname=payload.get("surname"),
+                )
 
     except jwt.PyJWTError:
         raise HTTPException(

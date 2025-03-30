@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from auth import authenticate
 from database import get_db_connection
-from model.product import NewProduct
+from model.product.product import NewProduct
 from model.user import User
 
 router = APIRouter()
