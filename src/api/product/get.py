@@ -72,7 +72,8 @@ async def get_product(product_id: UUID):
                     return product
 
                 # If it's not in either, then it doesn't exist
-                raise HTTPException(status_code=404, detail="Product not found")
+                raise HTTPException(
+                    status_code=404, detail="Product not found")
 
         return product
 
