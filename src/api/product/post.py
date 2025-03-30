@@ -23,82 +23,8 @@ async def post_product(product: NewProduct, user: User = Depends(authenticate)):
                 )
 
                 try:
-                    insert_product_query = sql.SQL("""
-                        INSERT INTO chopchop.product_id DEFAULT VALUES
-                        RETURNING product_id
-                    """)
-                    cursor.execute(insert_product_query)
-                    product_id = cursor.fetchone()[0]
-
-                    match product.type_:
-                        case ProductType.VERIFIED:
-                            if User.Type not in User.VERIFIED_TYPES:
-                                raise HTTPException(
-                                    status_code=500,
-                                    detail="This user cannot post verified products",
-                                )
-
-                            insert_verified_query = sql.SQL("""
-                                INSERT INTO chopchop.verified_product (
-                                    vp_id, 
-                                    vp_owner, 
-                                    vp_sku, 
-                                    vp_name, 
-                                    vp_description, 
-                                    vp_stock, 
-                                    vp_price, 
-                                    vp_image, 
-                                    vp_category
-                                )
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            """)
-                            cursor.execute(
-                                insert_verified_query,
-                                (
-                                    product_id,
-                                    user.id_,
-                                    product.sku,
-                                    product.name,
-                                    product.description,
-                                    product.stock,
-                                    product.price,
-                                    product.image,
-                                    product.category.value,
-                                ),
-                            )
-
-                        case ProductType.SECONDHAND:
-                            if User.Type not in User.SECONDHAND_TYPES:
-                                raise HTTPException(
-                                    status_code=500,
-                                    detail="This user cannot post verified products",
-                                )
-
-                            insert_secondhand_query = sql.SQL("""
-                                INSERT INTO chopchop.secondhand_product (
-                                    sp_id, 
-                                    sp_owner, 
-                                    sp_name, 
-                                    sp_description, 
-                                    sp_price, 
-                                    sp_image, 
-                                    sp_category
-                                )
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """)
-                            cursor.execute(
-                                insert_secondhand_query,
-                                (
-                                    product_id,
-                                    user.id_,
-                                    product.name,
-                                    product.description,
-                                    product.price,
-                                    product.image,
-                                    product.category.value,
-                                ),
-                            )
-
+                    product = product.into_product()
+                    product_id = product.insert(cursor, user)
                     conn.commit()  # Cometre la transacció si tot ha anat bé
                     return product_id
 
