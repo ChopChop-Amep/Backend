@@ -6,6 +6,7 @@ from psycopg import sql
 from auth import authenticate
 from database import get_db_connection
 from model.product import NewProduct, ProductType
+from model.user import User
 
 router = APIRouter()
 
@@ -14,7 +15,7 @@ router = APIRouter()
     "/product",
     description="Create a new product",
 )
-async def post_product(product: NewProduct, user_id: UUID = Depends(authenticate)):
+async def post_product(product: NewProduct, user: User = Depends(authenticate)):
     try:
         conn = get_db_connection()
         with conn:
@@ -51,7 +52,7 @@ async def post_product(product: NewProduct, user_id: UUID = Depends(authenticate
                                 insert_verified_query,
                                 (
                                     product_id,
-                                    user_id,
+                                    user.id_,
                                     product.sku,
                                     product.name,
                                     product.description,
@@ -79,7 +80,7 @@ async def post_product(product: NewProduct, user_id: UUID = Depends(authenticate
                                 insert_secondhand_query,
                                 (
                                     product_id,
-                                    user_id,
+                                    user.id_,
                                     product.name,
                                     product.description,
                                     product.price,
