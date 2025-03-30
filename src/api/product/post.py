@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg import sql
 
@@ -34,6 +32,12 @@ async def post_product(product: NewProduct, user: User = Depends(authenticate)):
 
                     match product.type_:
                         case ProductType.VERIFIED:
+                            if User.Type not in User.VERIFIED_TYPES:
+                                raise HTTPException(
+                                    status_code=500,
+                                    detail="This user cannot post verified products",
+                                )
+
                             insert_verified_query = sql.SQL("""
                                 INSERT INTO chopchop.verified_product (
                                     vp_id, 
@@ -64,6 +68,12 @@ async def post_product(product: NewProduct, user: User = Depends(authenticate)):
                             )
 
                         case ProductType.SECONDHAND:
+                            if User.Type not in User.SECONDHAND_TYPES:
+                                raise HTTPException(
+                                    status_code=500,
+                                    detail="This user cannot post verified products",
+                                )
+
                             insert_secondhand_query = sql.SQL("""
                                 INSERT INTO chopchop.secondhand_product (
                                     sp_id, 

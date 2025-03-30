@@ -13,6 +13,7 @@ class User(BaseModel):
         ADMIN = "admin"
 
     VERIFIED_TYPES: ClassVar[tuple[Type, ...]] = (Type.PROFESSIONAL, Type.ENTERPRISE)
+    SECONDHAND_TYPES: ClassVar[tuple[Type, ...]] = (Type.PROFESSIONAL, Type.PARTICULAR)
 
     id_: UUID = Field(..., alias="id")
     name: str
