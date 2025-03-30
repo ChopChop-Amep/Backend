@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from psycopg import sql
 
 from auth import authenticate
 from database import get_db_connection
-from model.product import NewProduct, ProductType
+from model.product import NewProduct
 from model.user import User
 
 router = APIRouter()
