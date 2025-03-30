@@ -9,6 +9,7 @@ from model.user import User
 
 router = APIRouter()
 
+# TODO: OOPize this
 
 @router.delete("/product/{product_id}", description="Delete a product")
 async def delete_product(product_id: UUID, user: User = Depends(authenticate)):
