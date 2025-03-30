@@ -21,7 +21,8 @@ async def delete_product(product_id: UUID, user: User = Depends(authenticate)):
 
                 # If it wasn't a SecondHandProduct either, it's either not an existing product or the user doesn't have permission to delete it. Return an error.
                 if not product:
-                    raise HTTPException(status_code=404, detail="Product not found")
+                    raise HTTPException(
+                        status_code=404, detail="Product not found")
 
         return Response(status_code=200)
 

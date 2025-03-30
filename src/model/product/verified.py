@@ -37,7 +37,8 @@ class VerifiedProduct(Product):
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Professional) or isinstance(user, Enterprise)):
-            raise Exception("This user is not allowed to post verified products")
+            raise Exception(
+                "This user is not allowed to post verified products")
 
         insert_product_query = sql.SQL("""
             INSERT INTO chopchop.product_id DEFAULT VALUES
