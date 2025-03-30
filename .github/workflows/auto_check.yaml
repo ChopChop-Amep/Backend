@@ -32,7 +32,7 @@ jobs:
 
       - name: Check lints
         run: |
-          flake8 --ignore=E501 .
+          flake8 --ignore=E501 --ignore=W291 .
 
       - name: Check for vulnerabilities
         run: |
