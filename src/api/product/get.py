@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from psycopg import sql
 
 from database import get_db_connection
-from model.product import Product
+from model.product import Product, ProductType
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ async def get_product(product_id: UUID):
 
                 if result:
                     product = Product(
-                        type_=Product.ProductType.VERIFIED,
+                        type_=ProductType.VERIFIED,
                         id_=result[0],
                         owner=result[1],
                         sku=result[2],
@@ -76,7 +76,9 @@ async def get_product(product_id: UUID):
                     status_code=404, detail="Product not found")
 
         return product
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         conn.close()
