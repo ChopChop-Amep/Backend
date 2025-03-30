@@ -32,12 +32,13 @@ class Category(Enum):
     ALTRES = "altres"
 
 
+class ProductType(Enum):
+    VERIFIED = "verified"
+    SECONDHAND = "secondhand"
+
+
 # Optional fields only populated when _type == VERIFIED
 class Product(BaseModel):
-    class ProductType(Enum):
-        VERIFIED = "verified"
-        SECONDHAND = "secondhand"
-
     type_: ProductType = Field(..., alias="type")
     id_: UUID = Field(..., alias="id")
     owner: UUID
@@ -49,3 +50,15 @@ class Product(BaseModel):
     image: str
     category: Category
     sold: Optional[int]
+
+
+# Used to seralize the recieved json for the POST request on /product
+class NewProduct(BaseModel):
+    type_: ProductType = Field(..., alias="type")
+    sku: Optional[str]
+    name: str
+    description: str
+    stock: Optional[int]
+    price: float
+    image: str
+    category: Category
