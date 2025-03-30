@@ -6,9 +6,6 @@ from pydantic import BaseModel, Field
 from psycopg import Cursor
 from fastapi import HTTPException
 
-from model.product.secondhand import SecondhandProduct
-from model.product.verified import VerifiedProduct
-
 
 class Product(BaseModel):
     class Category(Enum):
@@ -67,10 +64,14 @@ class Product(BaseModel):
 
         match cursor.fetchone()[0]:
             case "verified":
+                from model.product.verified import VerifiedProduct
+
                 product = VerifiedProduct(_id=product_id)
                 return product
 
             case "secondhand":
+                from model.product.secondhand import SecondhandProduct
+
                 return SecondhandProduct(_id=product_id)
 
             case "not found":
@@ -107,6 +108,8 @@ class NewProduct(BaseModel):
                         "SKU and stock must be provided for verified products."
                     )
 
+                from model.product.verified import VerifiedProduct
+
                 return VerifiedProduct(
                     sku=self.sku,
                     name=self.name,
@@ -118,6 +121,8 @@ class NewProduct(BaseModel):
                 )
 
             case self.Type.SECONDHAND:
+                from model.product.secondhand import SecondhandProduct
+
                 return SecondhandProduct(
                     name=self.name,
                     description=self.description,

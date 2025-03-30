@@ -3,7 +3,7 @@ from uuid import UUID
 from psycopg import Cursor, sql
 from fastapi import HTTPException
 
-from model.user import User, Professional, Admin
+from model.user import User, Professional, Enterprise, Admin
 from model.product.product import Product
 
 
