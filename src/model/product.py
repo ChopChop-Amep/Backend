@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from enum import Enum
 from typing import Optional
 
@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from psycopg import Cursor, sql
 from fastapi import HTTPException
 
-from model import User, Particular, Professional, Enterprise
+from model.user import User, Particular, Professional, Enterprise, Admin
 
 
 class Category(Enum):
@@ -36,22 +36,22 @@ class Category(Enum):
     ALTRES = "altres"
 
 
-# Optional fields only populated when _type == VERIFIED
 class Product(BaseModel):
-    id_: UUID = Field(..., alias="id")
-    owner: UUID
-    name: str
-    description: str
-    price: float
-    image: str
-    category: Category
+    id_: Optional[UUID] = Field(default=None, alias="id")
+    owner: Optional[UUID] = None
+    name: str = ""
+    description: str = ""
+    price: float = 0.0
+    image: str = ""
+    category: Category = Category.ALTRES
 
-    def fetch(self, cursor: Cursor, product_id: UUID):
+    @staticmethod
+    def factory(cursor: Cursor, product_id: UUID):
         query = """
             SELECT 
                 CASE 
-                    WHEN vp.vp_id IS NOT NULL THEN 'verified_product'
-                    WHEN sp.sp_id IS NOT NULL THEN 'secondhand_product'
+                    WHEN vp.vp_id IS NOT NULL THEN 'verified'
+                    WHEN sp.sp_id IS NOT NULL THEN 'secondhand'
                     ELSE 'not found'
                     END AS product_type
                 FROM 
@@ -65,13 +65,22 @@ class Product(BaseModel):
         """
         cursor.execute(query, (product_id,))
 
-        match cursor.fetchone():
-            case "verified_product":
-                return VerifiedProduct.fetch(cursor, product_id)
-            case "secondhand_product":
-                return SecondhandProduct.fetch(cursor, product_id)
-            case None:
-                raise HTTPException(status_code=404, detail=str("Product not found"))
+        match cursor.fetchone()[0]:
+            case "verified":
+                product = VerifiedProduct(_id=product_id)
+                return product
+
+            case "secondhand":
+                return SecondhandProduct(_id=product_id)
+
+            case "not found":
+                raise HTTPException(status_code=404, detail="Product not found")
+
+            case _:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Something unexpected happened at model/product.py:Product.into_child:78",
+                )
 
 
 class SecondhandProduct(Product):
@@ -86,13 +95,13 @@ class SecondhandProduct(Product):
         cursor.execute(query_secondhand, (product_id,))
         response = cursor.fetchone()
 
-        self.id_ = (UUID(response[0]),)
-        self.owner = (UUID(response[1]),)
-        self.name = (response[2],)
-        self.description = (response[3],)
-        self.price = (float(response[4]),)
-        self.image = (response[5],)
-        self.category = (Category(response[6]),)
+        self.id_ = UUID(response[0])
+        self.owner = UUID(response[1])
+        self.name = response[2]
+        self.description = response[3]
+        self.price = float(response[4])
+        self.image = response[5]
+        self.category = Category(response[6])
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Particular) or isinstance(user, Professional)):
@@ -132,11 +141,27 @@ class SecondhandProduct(Product):
 
         return product_id
 
+    def delete(self, cursor: Cursor, user: User):
+        query = "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s AND sp_owner = %s RETURNING 'success'"
+        if isinstance(user, Admin):
+            query = (  # If tne user is an admin, skip product owner check
+                "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s RETURNING 'success'"
+            )
+
+        cursor.execute(
+            sql.SQL(query),
+            (self.id_, user.id),
+        )
+        response = cursor.fetchone()
+
+        if response != "success":
+            raise HTTPException(status_code=404, detail="Product not found")
+
 
 class VerifiedProduct(Product):
-    sku: str
-    stock: int
-    sold: int
+    sku: str = ""
+    stock: int = 0
+    sold: int = 0
 
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_verified = sql.SQL(
@@ -147,18 +172,19 @@ class VerifiedProduct(Product):
             """
         )
         cursor.execute(query_verified, (product_id,))
+
         response = cursor.fetchone()
 
-        self.id_ = (UUID(response[0]),)
-        self.owner = (UUID(response[1]),)
-        self.sku = (response[2],)
-        self.name = (response[3],)
-        self.description = (response[4],)
-        self.stock = (int(response[5]),)
-        self.price = (float(response[6]),)
-        self.image = (response[7],)
-        self.category = (Category(response[8]),)
-        self.sold = (response[9],)
+        self.id_ = response[0]
+        self.owner = response[1]
+        self.sku = response[2]
+        self.name = response[3]
+        self.description = response[4]
+        self.stock = int(response[5])
+        self.price = float(response[6])
+        self.image = response[7]
+        self.category = Category(response[8])
+        self.sold = response[9]
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Professional) or isinstance(user, Enterprise)):
@@ -203,6 +229,22 @@ class VerifiedProduct(Product):
 
         return product_id
 
+    def delete(self, cursor: Cursor, user: User):
+        query = "DELETE FROM chopchop.verified_product WHERE vp_id = %s AND vp_owner = %s RETURNING 'success'"
+        if isinstance(user, Admin):
+            query = (  # If tne user is an admin, skip product owner check
+                "DELETE FROM chopchop.verified_product WHERE vp_id = %s RETURNING 'success'"
+            )
+
+        cursor.execute(
+            sql.SQL(query),
+            (self.id_, user.id),
+        )
+        response = cursor.fetchone()
+
+        if response != "success":
+            raise HTTPException(status_code=404, detail="Product not found")
+
 
 # Used to seralize the recieved json for the POST request on /product
 class NewProduct(BaseModel):
@@ -219,7 +261,7 @@ class NewProduct(BaseModel):
     image: str
     category: Category
 
-    def into_product(self):
+    def factory(self):
         match self.type_:
             case self.Type.VERIFIED:
                 if self.sku is None or self.stock is None:
@@ -235,7 +277,6 @@ class NewProduct(BaseModel):
                     price=self.price,
                     image=self.image,
                     category=self.category,
-                    sold=0,
                 )
 
             case self.Type.SECONDHAND:

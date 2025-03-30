@@ -1,6 +1,4 @@
 from uuid import UUID
-from enum import Enum
-from typing import Optional, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -10,18 +8,18 @@ class User(BaseModel):
     name: str
     surname: str
 
+
 class Particular(User):
-    def whatever():
-        print("hi")
+    pass
+
 
 class Professional(User):
-    def whatever():
-        print("hi")
+    pass
+
 
 class Enterprise(User):
-    def whatever():
-        print("hi")
+    pass
+
 
 class Admin(User):
-    def whatever():
-        print("hi")
+    pass

@@ -17,7 +17,7 @@ async def get_product(product_id: UUID):
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
-                product = Product()
+                product = Product.factory(cursor, product_id)
                 product.fetch(cursor, product_id)
                 return product
 
