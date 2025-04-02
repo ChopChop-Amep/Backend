@@ -1,3 +1,4 @@
+from uuid import UUID
 from enum import Enum
 from typing import Optional
 
