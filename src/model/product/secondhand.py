@@ -81,3 +81,32 @@ class SecondhandProduct(Product):
 
         if response != "success":
             raise HTTPException(status_code=404, detail="Product not found")
+
+    def update(self, cursor: Cursor, user: User):
+        update_secondhand_query = sql.SQL("""
+            UPDATE chopchop.secondhand_product
+            SET  
+                sp_name = %s, 
+                sp_description = %s, 
+                sp_price = %s, 
+                sp_image = %s, 
+                sp_category = %s
+            WHERE sp_id = %s AND sp_owner = %s
+            RETURNING 'success'
+        """)
+        cursor.execute(
+            update_secondhand_query,
+            (
+                self.name,
+                self.description,
+                self.price,
+                self.image,
+                self.category.value,
+                self.sp_id,
+                user.id_,
+            ),
+        )
+        response = cursor.fetchone()
+
+        if response != "success":
+            raise HTTPException(status_code=404, detail="Product not found")
