@@ -94,3 +94,35 @@ class VerifiedProduct(Product):
 
         if response != "success":
             raise HTTPException(status_code=404, detail="Product not found")
+
+    def update(self, cursor: Cursor, user: User):
+        update_verified_query = sql.SQL("""
+            UPDATE chopchop.verified_product
+            SET 
+                vp_name = %s, 
+                vp_description = %s, 
+                vp_stock = %s, 
+                vp_price = %s, 
+                vp_image = %s, 
+                vp_category = %s
+            WHERE vp_id = %s AND vp_owner = %s
+            RETURNING 'success'
+        """)
+
+        cursor.execute(
+            update_verified_query,
+            (
+                self.name,
+                self.description,
+                self.stock,
+                self.price,
+                self.image,
+                self.category.value,
+                self.vp_id,
+                user.id_,
+            ),
+        )
+        response = cursor.fetchone()
+
+        if response != "success":
+            raise HTTPException(status_code=404, detail="Product not found")
