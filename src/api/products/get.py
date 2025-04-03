@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException
 
 from database import get_db_connection
