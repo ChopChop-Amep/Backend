@@ -34,6 +34,8 @@ class Product(BaseModel):
 
         ALTRES = "altres"
 
+    PRODUCTS_PER_PAGE: int = 12
+
     id_: Optional[UUID] = Field(default=None, alias="id")
     owner: Optional[UUID] = None
     name: str = ""
@@ -75,8 +77,7 @@ class Product(BaseModel):
                 return SecondhandProduct(_id=product_id)
 
             case "not found":
-                raise HTTPException(
-                    status_code=404, detail="Product not found")
+                raise HTTPException(status_code=404, detail="Product not found")
 
             case _:
                 raise HTTPException(
@@ -85,21 +86,60 @@ class Product(BaseModel):
                 )
 
     @staticmethod
-    def get_products(cursor: Cursor):
-        query = """
-                SELECT 
-                        vp_id, vp_name, vp_image 
-                        FROM chopchop.verified_product
+    def get_products(
+        cursor: Cursor,
+        query: Optional[str],
+        page: int,
+        category: Optional[Category],
+        price_min: float,
+        price_max: float,
+    ):
+        sql_query = """
+                SELECT vp_id, vp_name, vp_image 
+                FROM chopchop.verified_product
 
-                    UNION
+                UNION
 
-                SELECT 
-                        sp_id, sp_name, sp_image
-                        FROM chopchop.secondhand_product;
-
+                SELECT sp_id, sp_name, sp_image
+                FROM chopchop.secondhand_product
                 """
-        cursor.execute(query)
+        sql_query_parameters = []
+        conditions = []
+
+        # ============== Add filters =============== #
+        if query:
+            conditions.append("vp_name ILIKE %s OR sp_name ILIKE %s")
+            sql_query_parameters.extend([f"%{query}%", f"%{query}%"])
+
+        if category:
+            conditions.append("vp_category = %s OR sp_category = %s")
+            sql_query_parameters.extend([f"%{category}%", f"%{category}%"])
+
+        if conditions:
+            sql_query += " WHERE " + " AND ".join(conditions)
+        # ========================================== #
+
+        sql_query += """
+            AND vp_price BETWEEN %s AND %s OR sp_price BETWEEN %s and %s 
+            LIMIT %s OFFSET %s"
+        """
+
+        sql_query_parameters.extend(
+            [
+                price_min,
+                price_max,
+                price_min,
+                price_max,
+                Product.PRODUCTS_PER_PAGE,
+                page * Product.PRODUCTS_PER_PAGE,
+            ]
+        )
+
+        cursor.execute(
+            query, (Product.PRODUCTS_PER_PAGE * 2, page * Product.PRODUCTS_PER_PAGE)
+        )
         result = cursor.fetchall()
+
         return result
 
 
