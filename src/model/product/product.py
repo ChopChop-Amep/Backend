@@ -86,7 +86,6 @@ class Product(BaseModel):
 
     @staticmethod
     def get_products(cursor: Cursor):
-        print("CRIDAT GET_PRODUCTS CLASE PRODUCT")
         query = """
                 SELECT 
                         vp_id, vp_name, vp_image 
@@ -101,7 +100,6 @@ class Product(BaseModel):
                 """
         cursor.execute(query)
         result = cursor.fetchall()
-        print(result)
         return result
 
 
