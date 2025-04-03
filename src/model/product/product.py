@@ -84,6 +84,24 @@ class Product(BaseModel):
                     detail="Something unexpected happened at model/product.py:Product.into_child:78",
                 )
 
+    @staticmethod
+    def get_products(cursor: Cursor):
+        query = """
+                SELECT 
+                        vp_id, vp_name, vp_image 
+                        FROM chopchop.verified_product
+
+                    UNION
+
+                SELECT 
+                        sp_id, sp_name, sp_image
+                        FROM chopchop.secondhand_product;
+
+                """
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+
 
 # Used to seralize the recieved json for the POST request on /product
 class NewProduct(BaseModel):
