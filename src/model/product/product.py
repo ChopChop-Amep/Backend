@@ -77,7 +77,8 @@ class Product(BaseModel):
                 return SecondhandProduct(_id=product_id)
 
             case "not found":
-                raise HTTPException(status_code=404, detail="Product not found")
+                raise HTTPException(
+                    status_code=404, detail="Product not found")
 
             case _:
                 raise HTTPException(
@@ -136,7 +137,8 @@ class Product(BaseModel):
         )
 
         cursor.execute(
-            query, (Product.PRODUCTS_PER_PAGE * 2, page * Product.PRODUCTS_PER_PAGE)
+            query, (Product.PRODUCTS_PER_PAGE * 2,
+                    page * Product.PRODUCTS_PER_PAGE)
         )
         result = cursor.fetchall()
 
