@@ -129,10 +129,10 @@ class Product(BaseModel):
 
         sql_query += " WHERE " + " AND ".join(conditions)
         # ========================================== #
-        
+
         cursor.execute(sql_query, sql_query_parameters)
         result = cursor.fetchall()
-        
+
         return result
 
 
