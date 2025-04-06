@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from psycopg import Cursor
 from fastapi import HTTPException
 
+PRODUCTS_PER_PAGE = 12
+
 
 class Product(BaseModel):
     class Category(Enum):
@@ -85,21 +87,52 @@ class Product(BaseModel):
                 )
 
     @staticmethod
-    def get_products(cursor: Cursor):
-        query = """
-                SELECT 
-                        vp_id, vp_name, vp_image 
-                        FROM chopchop.verified_product
+    def get_products(
+        cursor: Cursor,
+        query: Optional[str],
+        page: int,
+        category: Optional[Category],
+        price_min: float,
+        price_max: float,
+    ):
+        sql_query = """
+            WITH products AS (
+                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category
+                FROM chopchop.verified_product
 
-                    UNION
+                UNION
 
-                SELECT 
-                        sp_id, sp_name, sp_image
-                        FROM chopchop.secondhand_product;
+                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category
+                FROM chopchop.secondhand_product
+            )
+            SELECT id, name, image, price FROM products
+        """
+        sql_query_parameters = []
+        conditions = []
 
-                """
-        cursor.execute(query)
+        # ============== Add filters =============== #
+        if query:
+            conditions.append("name ILIKE %s")
+            sql_query_parameters.append(query)
+
+        if category:
+            conditions.append("category = %s")
+            sql_query_parameters.append(category)
+
+        conditions.append("""
+            price BETWEEN %s AND %s
+            LIMIT %s OFFSET %s
+        """)
+        sql_query_parameters.extend(
+            [price_min, price_max, PRODUCTS_PER_PAGE, page * PRODUCTS_PER_PAGE]
+        )
+
+        sql_query += " WHERE " + " AND ".join(conditions)
+        # ========================================== #
+
+        cursor.execute(sql_query, sql_query_parameters)
         result = cursor.fetchall()
+
         return result
 
 
