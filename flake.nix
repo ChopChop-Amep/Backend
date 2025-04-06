@@ -31,7 +31,6 @@
             in { 
                 devShells.default = pkgs.mkShell {
                     buildInputs = python ++ dependencies ++ dev_tools;
-                    stdenv = pkgs.clangStdenv;
                 };
             }
         );

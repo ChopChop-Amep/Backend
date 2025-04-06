@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from psycopg import Cursor
 from fastapi import HTTPException
 
+PRODUCTS_PER_PAGE = 12
+
 
 class Product(BaseModel):
     class Category(Enum):
@@ -33,8 +35,6 @@ class Product(BaseModel):
         VIDEOJOCS = "videojocs"
 
         ALTRES = "altres"
-
-    PRODUCTS_PER_PAGE: int = 12
 
     id_: Optional[UUID] = Field(default=None, alias="id")
     owner: Optional[UUID] = None
@@ -96,52 +96,46 @@ class Product(BaseModel):
         price_max: float,
     ):
         sql_query = """
-                SELECT vp_id, vp_name, vp_image 
+            WITH products AS (
+                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category
                 FROM chopchop.verified_product
 
                 UNION
 
-                SELECT sp_id, sp_name, sp_image
+                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category
                 FROM chopchop.secondhand_product
-                """
+            )
+            SELECT id, name, image, price FROM products
+        """
         sql_query_parameters = []
         conditions = []
 
         # ============== Add filters =============== #
         if query:
-            conditions.append("vp_name ILIKE %s OR sp_name ILIKE %s")
-            sql_query_parameters.extend([f"%{query}%", f"%{query}%"])
+            conditions.append("name ILIKE %s")
+            sql_query_parameters.append(query)
 
         if category:
-            conditions.append("vp_category = %s OR sp_category = %s")
-            sql_query_parameters.extend([f"%{category}%", f"%{category}%"])
+            conditions.append("category = %s")
+            sql_query_parameters.append(category)
 
-        if conditions:
-            sql_query += " WHERE " + " AND ".join(conditions)
+        conditions.append("""
+            price BETWEEN %s AND %s
+            LIMIT %s OFFSET %s
+        """)
+        sql_query_parameters.extend(
+            [price_min, price_max, PRODUCTS_PER_PAGE, page * PRODUCTS_PER_PAGE]
+        )
+
+        sql_query += " WHERE " + " AND ".join(conditions)
         # ========================================== #
 
-        sql_query += """
-            AND vp_price BETWEEN %s AND %s OR sp_price BETWEEN %s and %s 
-            LIMIT %s OFFSET %s"
-        """
-
-        sql_query_parameters.extend(
-            [
-                price_min,
-                price_max,
-                price_min,
-                price_max,
-                Product.PRODUCTS_PER_PAGE,
-                page * Product.PRODUCTS_PER_PAGE,
-            ]
-        )
-
-        cursor.execute(
-            query, (Product.PRODUCTS_PER_PAGE * 2,
-                    page * Product.PRODUCTS_PER_PAGE)
-        )
+        print("Pre execute")
+        cursor.execute(sql_query, sql_query_parameters)
+        print("Fetch result")
         result = cursor.fetchall()
 
+        print("return")
         return result
 
 
