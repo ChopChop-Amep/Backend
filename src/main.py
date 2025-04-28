@@ -7,6 +7,8 @@ from api.product.delete import router as product_delete_router
 from api.product.post import router as product_post_router
 from api.products.get import router as products_get_router
 from api.product.put import router as product_put_router
+from api.compra.post import router as compra_post_router
+from api.compra.get import router as compra_factura_router
 
 
 api = FastAPI()
@@ -15,5 +17,8 @@ api.include_router(product_get_router)
 api.include_router(product_delete_router)
 api.include_router(product_post_router)
 api.include_router(product_put_router)
-
 api.include_router(products_get_router)
+
+# Incluir los nuevos routers de compra
+api.include_router(compra_post_router)
+api.include_router(compra_factura_router)
