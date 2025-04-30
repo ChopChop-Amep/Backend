@@ -24,7 +24,7 @@ class VerifiedProduct(Product):
 
         response = cursor.fetchone()
 
-        self.id_ = response[0]
+        self.id = response[0]
         self.owner = response[1]
         self.sku = response[2]
         self.name = response[3]
@@ -66,7 +66,7 @@ class VerifiedProduct(Product):
             insert_verified_query,
             (
                 product_id,
-                user.id_,
+                user.id,
                 self.sku,
                 self.name,
                 self.description,
@@ -88,7 +88,7 @@ class VerifiedProduct(Product):
 
         cursor.execute(
             sql.SQL(query),
-            (self.id_, user.id),
+            (self.id, user.id),
         )
         response = cursor.fetchone()
 
@@ -119,7 +119,7 @@ class VerifiedProduct(Product):
                 self.image,
                 self.category.value,
                 self.vp_id,
-                user.id_,
+                user.id,
             ),
         )
         response = cursor.fetchone()

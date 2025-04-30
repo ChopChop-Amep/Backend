@@ -22,14 +22,14 @@ def verify_jwt_token(token: str):
         match type_:
             case User.Type.PARTICULAR:
                 return Particular(
-                    id_=UUID(payload.get("sub")),
+                    id=UUID(payload.get("sub")),
                     name=payload.get("name"),
                     surname=payload.get("surname"),
                 )
 
             case User.Type.PROFESSIONAL:
                 return Professional(
-                    id_=UUID(payload.get("sub")),
+                    id=UUID(payload.get("sub")),
                     name=payload.get("name"),
                     surname=payload.get("surname"),
                     nif=payload.get("nif"),
@@ -37,7 +37,7 @@ def verify_jwt_token(token: str):
 
             case User.Type.ENTERPRISE:
                 return Enterprise(
-                    id_=UUID(payload.get("sub")),
+                    id=UUID(payload.get("sub")),
                     name=payload.get("name"),
                     surname=payload.get("surname"),
                     nif=payload.get("nif"),
@@ -45,7 +45,7 @@ def verify_jwt_token(token: str):
 
             case User.Type.ADMIN:
                 return Admin(
-                    id_=UUID(payload.get("sub")),
+                    id=UUID(payload.get("sub")),
                     name=payload.get("name"),
                     surname=payload.get("surname"),
                 )
