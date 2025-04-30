@@ -19,7 +19,7 @@ async def get_products(purchase_id: UUID, user: User = Depends(authenticate)):
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
-                return Purchase.fetch(cursor, user, purchase_id)
+                return Purchase(user).fetch(cursor, purchase_id)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

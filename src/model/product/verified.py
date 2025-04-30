@@ -12,6 +12,7 @@ class VerifiedProduct(Product):
     stock: int = 0
     sold: int = 0
 
+    @classmethod
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_verified = sql.SQL(
             """
@@ -125,4 +126,6 @@ class VerifiedProduct(Product):
         response = cursor.fetchone()
 
         if response != "success":
+            raise Exception(
+                "This user is not allowed to post verified products")
             raise HTTPException(status_code=404, detail="Product not found")
