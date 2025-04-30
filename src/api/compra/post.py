@@ -12,8 +12,10 @@ from model.product.product import Product
 
 router = APIRouter()
 
+
 class CompraRequest(BaseModel):
     products: List[UUID]
+
 
 @router.post(
     "/compra",
@@ -25,7 +27,7 @@ async def post_compra(compra_request: CompraRequest, user: User = Depends(authen
         with conn:
             with conn.cursor() as cursor:
                 conn.autocommit = False  # Usar transacción para asegurar consistencia
-                
+
                 try:
                     # Verificar la disponibilidad de los productos (especialmente para los verificados)
                     for product_id in compra_request.products:
@@ -37,13 +39,13 @@ async def post_compra(compra_request: CompraRequest, user: User = Depends(authen
                         """
                         cursor.execute(check_query, (product_id,))
                         verified_product = cursor.fetchone()
-                        
+
                         if verified_product and verified_product[0] <= 0:
                             raise HTTPException(
-                                status_code=400, 
+                                status_code=400,
                                 detail=f"Product '{verified_product[1]}' is out of stock"
                             )
-                        
+
                         # Comprobar si el producto de segunda mano existe y está disponible
                         if not verified_product:
                             secondhand_query = """
@@ -53,7 +55,7 @@ async def post_compra(compra_request: CompraRequest, user: User = Depends(authen
                             """
                             cursor.execute(secondhand_query, (product_id,))
                             secondhand_product = cursor.fetchone()
-                            
+
                             if not secondhand_product:
                                 # Intenta obtener algún nombre de producto para el error
                                 cursor.execute(
@@ -62,33 +64,33 @@ async def post_compra(compra_request: CompraRequest, user: User = Depends(authen
                                 )
                                 product_name = cursor.fetchone()
                                 name_str = f" '{product_name[0]}'" if product_name and product_name[0] else ""
-                                
+
                                 raise HTTPException(
-                                    status_code=404, 
+                                    status_code=404,
                                     detail=f"Product{name_str} with ID {product_id} not found"
                                 )
-                    
+
                     # Crear la compra
                     compra = Compra(
                         user_id=user.id_,
                         products=compra_request.products
                     )
-                    
+
                     compra_id = compra.insert(cursor, user)
                     conn.commit()
-                    
+
                     return {"compra_id": compra_id}
-                    
+
                 except Exception as e:
                     conn.rollback()
                     if isinstance(e, HTTPException):
                         raise e
                     raise HTTPException(status_code=500, detail=str(e))
-    
+
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     finally:
         conn.close()

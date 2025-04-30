@@ -8,12 +8,13 @@ from fastapi import HTTPException
 
 from model.user import User
 
+
 class Compra(BaseModel):
     id_: Optional[UUID] = Field(default=None, alias="id")
     user_id: UUID
     data: datetime = Field(default_factory=datetime.now)
     products: List[UUID] = []
-    
+
     @staticmethod
     def get_compra(cursor: Cursor, compra_id: UUID):
         query = """
@@ -23,16 +24,16 @@ class Compra(BaseModel):
         """
         cursor.execute(query, (compra_id,))
         result = cursor.fetchone()
-        
+
         if not result:
             raise HTTPException(status_code=404, detail="Compra not found")
-            
+
         compra = Compra(
             id_=result[0],
             user_id=result[1],
             data=result[2]
         )
-        
+
         # Fetch associated products
         product_query = """
             SELECT cop_product_id
@@ -41,15 +42,16 @@ class Compra(BaseModel):
         """
         cursor.execute(product_query, (compra_id,))
         product_results = cursor.fetchall()
-        
+
         compra.products = [UUID(product[0]) for product in product_results]
-        
+
         return compra
-    
+
     def insert(self, cursor: Cursor, user: User):
         if str(user.id_) != str(self.user_id):
-            raise HTTPException(status_code=403, detail="User can only create purchases for themselves")
-        
+            raise HTTPException(
+                status_code=403, detail="User can only create purchases for themselves")
+
         insert_compra_query = sql.SQL("""
             INSERT INTO chopchop.compra (co_user_id, co_data)
             VALUES (%s, %s)
@@ -57,7 +59,7 @@ class Compra(BaseModel):
         """)
         cursor.execute(insert_compra_query, (self.user_id, self.data))
         compra_id = cursor.fetchone()[0]
-        
+
         # Insert associated products
         for product_id in self.products:
             insert_product_query = sql.SQL("""
@@ -65,7 +67,7 @@ class Compra(BaseModel):
                 VALUES (%s, %s)
             """)
             cursor.execute(insert_product_query, (compra_id, product_id))
-            
+
             # Update stock for verified products
             update_stock_query = sql.SQL("""
                 UPDATE chopchop.verified_product
@@ -73,14 +75,15 @@ class Compra(BaseModel):
                 WHERE vp_id = %s AND vp_stock > 0
             """)
             cursor.execute(update_stock_query, (product_id,))
-        
+
         self.id_ = compra_id
         return compra_id
-    
+
     def extreure_factura(self, cursor: Cursor):
         if not self.id_:
-            raise HTTPException(status_code=400, detail="Cannot generate invoice for unsaved purchase")
-        
+            raise HTTPException(
+                status_code=400, detail="Cannot generate invoice for unsaved purchase")
+
         # Get user information
         user_query = """
             SELECT name, surname, nif
@@ -107,7 +110,7 @@ class Compra(BaseModel):
         """
         cursor.execute(user_query, (self.user_id, self.user_id, self.user_id))
         user_info = cursor.fetchone()
-        
+
         # Get product information
         products_query = """
             WITH products AS (
@@ -125,7 +128,7 @@ class Compra(BaseModel):
         """
         cursor.execute(products_query, (self.products, self.products))
         products_info = cursor.fetchall()
-        
+
         # Generate invoice data
         invoice = {
             "invoice_id": str(self.id_),
@@ -147,5 +150,5 @@ class Compra(BaseModel):
             ],
             "total": sum(float(product[2]) for product in products_info)
         }
-        
+
         return invoice
