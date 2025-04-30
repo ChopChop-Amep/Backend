@@ -1,7 +1,7 @@
 from uuid import UUID
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class User(BaseModel):
@@ -11,7 +11,7 @@ class User(BaseModel):
         ENTERPRISE = "enterprise"
         ADMIN = "admin"
 
-    id_: UUID = Field(..., alias="id")
+    id: UUID
     name: str
     surname: str
 
