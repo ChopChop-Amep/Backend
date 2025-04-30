@@ -8,6 +8,7 @@ from model.product.product import Product
 
 
 class SecondhandProduct(Product):
+    @classmethod
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_secondhand = sql.SQL(
             """
@@ -19,7 +20,7 @@ class SecondhandProduct(Product):
         cursor.execute(query_secondhand, (product_id,))
         response = cursor.fetchone()
 
-        self.id_ = UUID(response[0])
+        self.id = UUID(response[0])
         self.owner = UUID(response[1])
         self.name = response[2]
         self.description = response[3]
@@ -55,7 +56,7 @@ class SecondhandProduct(Product):
             insert_secondhand_query,
             (
                 product_id,
-                user.id_,
+                user.id,
                 self.name,
                 self.description,
                 self.price,
@@ -75,7 +76,7 @@ class SecondhandProduct(Product):
 
         cursor.execute(
             sql.SQL(query),
-            (self.id_, user.id),
+            (self.id, user.id),
         )
         response = cursor.fetchone()
 
@@ -103,7 +104,7 @@ class SecondhandProduct(Product):
                 self.image,
                 self.category.value,
                 self.sp_id,
-                user.id_,
+                user.id,
             ),
         )
         response = cursor.fetchone()
