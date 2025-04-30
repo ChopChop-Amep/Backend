@@ -2,7 +2,7 @@ from uuid import UUID
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from psycopg import Cursor
 from fastapi import HTTPException
 
@@ -36,7 +36,7 @@ class Product(BaseModel):
 
         ALTRES = "altres"
 
-    id_: Optional[UUID] = Field(default=None, alias="id")
+    id: Optional[UUID] = None
     owner: Optional[UUID] = None
     name: str = ""
     description: str = ""
@@ -142,7 +142,7 @@ class NewProduct(BaseModel):
         VERIFIED = "verified"
         SECONDHAND = "secondhand"
 
-    type_: Type = Field(..., alias="type")
+    type: Type
     sku: Optional[str]
     name: str
     description: str
@@ -152,7 +152,7 @@ class NewProduct(BaseModel):
     category: Product.Category
 
     def factory(self):
-        match self.type_:
+        match self.type:
             case self.Type.VERIFIED:
                 if self.sku is None or self.stock is None:
                     raise Exception(
