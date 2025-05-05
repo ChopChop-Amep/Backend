@@ -1,34 +1,38 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from auth import authenticate
 from database import get_db_connection
-from model.product.product import NewProduct
+from model.purchase import Purchase
 from model.user import User
 
 router = APIRouter()
 
 
 @router.post(
-    "/product",
-    description="Create a new product",
+    "/purchase",
+    description="Make a purchase",
 )
-async def post_product(product: NewProduct, user: User = Depends(authenticate)):
+async def post_product(
+    items: List[Purchase.PurchaseItem], user: User = Depends(authenticate)
+):
     try:
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
                 conn.autocommit = (
-                    False  # Utilitzar una transacció ja que hi ha 2 insercions
+                    False  # We have to insert several tables, so use a transaction
                 )
 
                 try:
-                    product = product.into_product()
-                    product_id = product.insert(cursor, user)
-                    conn.commit()  # Cometre la transacció si tot ha anat bé
-                    return product_id
+                    purchase_id = Purchase(user).insert(cursor, items)
+                    conn.commit()  # Commit the transaction if all is well
+
+                    return purchase_id
 
                 except Exception as e:
-                    conn.rollback()  # Fer rollback si cap inserció falla
+                    conn.rollback()
                     raise HTTPException(status_code=500, detail=str(e))
 
     except Exception as e:
