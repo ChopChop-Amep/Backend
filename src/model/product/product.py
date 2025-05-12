@@ -131,9 +131,18 @@ class Product(BaseModel):
         # ========================================== #
 
         cursor.execute(sql_query, sql_query_parameters)
-        result = cursor.fetchall()
+        results = cursor.fetchall()
 
-        return result
+        def to_dict(result):
+            return {
+                "id": result[0],
+                "name": result[1],
+                "image": result[2],
+                "price": result[3]
+            }
+
+        products = list(map(to_dict, results))
+        return products
 
 
 # Used to seralize the recieved json for the POST request on /product

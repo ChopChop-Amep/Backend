@@ -12,7 +12,6 @@ class VerifiedProduct(Product):
     stock: int = 0
     sold: int = 0
 
-    @classmethod
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_verified = sql.SQL(
             """
