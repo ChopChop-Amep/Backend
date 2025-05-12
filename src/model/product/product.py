@@ -94,15 +94,16 @@ class Product(BaseModel):
         category: Optional[Category],
         price_min: float,
         price_max: float,
+        owner: Optional[UUID],
     ):
         sql_query = """
             WITH products AS (
-                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category
+                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner
                 FROM chopchop.verified_product
 
                 UNION
 
-                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category
+                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category, sp_owner AS owner
                 FROM chopchop.secondhand_product
             )
             SELECT id, name, image, price FROM products
@@ -112,12 +113,16 @@ class Product(BaseModel):
 
         # ============== Add filters =============== #
         if query:
-            conditions.append("name ILIKE %s")
+            conditions.append("name ILIKE %%s%")
             sql_query_parameters.append(query)
 
         if category:
             conditions.append("category = %s")
             sql_query_parameters.append(category)
+
+        if owner:
+            conditions.append("owner = %s")
+            sql_query_parameters.append(owner)
 
         conditions.append("""
             price BETWEEN %s AND %s
