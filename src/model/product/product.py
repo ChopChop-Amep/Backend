@@ -113,7 +113,7 @@ class Product(BaseModel):
 
         # ============== Add filters =============== #
         if query:
-            conditions.append("name ILIKE %s%")
+            conditions.append("name ILIKE %s")
             sql_query_parameters.append(f"%{query}%")
 
         if category:
