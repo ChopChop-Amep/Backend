@@ -8,7 +8,6 @@ from model.product.product import Product
 
 
 class SecondhandProduct(Product):
-    @classmethod
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_secondhand = sql.SQL(
             """
