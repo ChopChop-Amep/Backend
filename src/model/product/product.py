@@ -42,7 +42,7 @@ class Product(BaseModel):
     description: str = ""
     price: float = 0.0
     image: str = ""
-    category: Category = Category.ALTRES
+    category: Category = Category.altres
 
     @staticmethod
     def factory(cursor: Cursor, product_id: UUID):
