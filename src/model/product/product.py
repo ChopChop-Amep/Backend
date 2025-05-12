@@ -11,30 +11,30 @@ PRODUCTS_PER_PAGE = 12
 
 class Product(BaseModel):
     class Category(Enum):
-        ARTESANAL = "artesanal"
-        ANTIGUITATS = "antiguitats"
-        COSMETICA = "cosmetica"
-        CUINA = "cuina"
-        ELECTRODOMESTICS = "electrodomestics"
-        ELECTRONICA = "electronica"
-        EQUIPAMENT_LAB = "equipament_lab"
-        ESPORTS = "esports"
-        FERRAMENTES = "ferramentes"
-        INFANTIL = "infantil"
-        INSTRUMENTS = "instruments"
-        JARDINERIA = "jardineria"
-        JOCS_DE_TAULA = "jocs_de_taula"
-        JOIES_COMPLEMENTS_ACCESSORIS = "joies_complements_accessoris"
-        LLIBRES = "llibres"
-        MASCOTES = "mascotes"
-        MOBLES = "mobles"
-        NETEJA = "neteja"
-        ROBA = "roba"
-        SABATES = "sabates"
-        VEHICLES = "vehicles"
-        VIDEOJOCS = "videojocs"
+        artesanal = "artesanal"
+        antiguitats = "antiguitats"
+        cosmetica = "cosmetica"
+        cuina = "cuina"
+        electrodomestics = "electrodomestics"
+        electronica = "electronica"
+        equipament_lab = "equipament_lab"
+        esports = "esports"
+        ferramentes = "ferramentes"
+        infantil = "infantil"
+        instruments = "instruments"
+        jardineria = "jardineria"
+        jocs_de_taula = "jocs_de_taula"
+        joies_complements_accessoris = "joies_complements_accessoris"
+        llibres = "llibres"
+        mascotes = "mascotes"
+        mobles = "mobles"
+        neteja = "neteja"
+        roba = "roba"
+        sabates = "sabates"
+        vehicles = "vehicles"
+        videojocs = "videojocs"
 
-        ALTRES = "altres"
+        altres = "altres"
 
     id: Optional[UUID] = None
     owner: Optional[UUID] = None
@@ -77,8 +77,7 @@ class Product(BaseModel):
                 return SecondhandProduct(_id=product_id)
 
             case "not found":
-                raise HTTPException(
-                    status_code=404, detail="Product not found")
+                raise HTTPException(status_code=404, detail="Product not found")
 
             case _:
                 raise HTTPException(
@@ -143,7 +142,7 @@ class Product(BaseModel):
                 "id": result[0],
                 "name": result[1],
                 "image": result[2],
-                "price": result[3]
+                "price": result[3],
             }
 
         products = list(map(to_dict, results))
