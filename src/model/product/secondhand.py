@@ -19,8 +19,8 @@ class SecondhandProduct(Product):
         cursor.execute(query_secondhand, (product_id,))
         response = cursor.fetchone()
 
-        self.id = UUID(response[0])
-        self.owner = UUID(response[1])
+        self.id = response[0]
+        self.owner = response[1]
         self.name = response[2]
         self.description = response[3]
         self.price = float(response[4])
