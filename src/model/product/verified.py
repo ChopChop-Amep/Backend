@@ -15,7 +15,8 @@ class VerifiedProduct(Product):
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_verified = sql.SQL(
             """
-            SELECT vp_id, vp_owner, vp_sku, vp_name, vp_description, vp_stock, vp_price, vp_image, vp_category, vp_sold
+            SELECT vp_id, vp_owner, vp_sku, vp_name, vp_description, vp_stock, vp_price, vp_image, vp_category, vp_sold, 
+            (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS vp_rating ,vp_discount, vp_deleted
             FROM chopchop.verified_product
             WHERE vp_id = %s;
             """
@@ -34,6 +35,9 @@ class VerifiedProduct(Product):
         self.image = response[7]
         self.category = self.Category(response[8])
         self.sold = response[9]
+        self.rating = response[10]
+        self.discount = response[11]
+        self.deleted = response[12]
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Professional) or isinstance(user, Enterprise)):

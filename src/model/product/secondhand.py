@@ -11,7 +11,8 @@ class SecondhandProduct(Product):
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_secondhand = sql.SQL(
             """
-            SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category
+            SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category, 
+            (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS sp_rating, sp_discount, sp_deleted
             FROM chopchop.secondhand_product
             WHERE sp_id = %s;
             """
@@ -26,6 +27,9 @@ class SecondhandProduct(Product):
         self.price = float(response[4])
         self.image = response[5]
         self.category = self.Category(response[6])
+        self.rating = response[7]
+        self.discount = response[8]
+        self.deleted = response[9]
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Particular) or isinstance(user, Professional)):

@@ -43,6 +43,9 @@ class Product(BaseModel):
     price: float = 0.0
     image: str = ""
     category: Category = Category.altres
+    discount: float = 0.0
+    rating: float = 0.0
+    deleted: bool = False
 
     @staticmethod
     def factory(cursor: Cursor, product_id: UUID):
