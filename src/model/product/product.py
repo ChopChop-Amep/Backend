@@ -80,7 +80,8 @@ class Product(BaseModel):
                 return SecondhandProduct(_id=product_id)
 
             case "not found":
-                raise HTTPException(status_code=404, detail="Product not found")
+                raise HTTPException(
+                    status_code=404, detail="Product not found")
 
             case _:
                 raise HTTPException(
