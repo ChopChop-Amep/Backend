@@ -101,15 +101,19 @@ class Product(BaseModel):
     ):
         sql_query = """
             WITH products AS (
-                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner
+                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner,
+                    (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS rating, vp_discount AS discount, vp_deleted AS deleted
                 FROM chopchop.verified_product
+                WHERE vp_deleted = FALSE
 
                 UNION
 
-                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category, sp_owner AS owner
+                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category, sp_owner AS owner,
+                    (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS rating, sp_discount AS discount, sp_deleted AS deleted
                 FROM chopchop.secondhand_product
+                WHERE sp_deleted = FALSE
             )
-            SELECT id, name, image, price FROM products
+            SELECT id, name, image, price, rating, discount FROM products
         """
         sql_query_parameters = []
         conditions = []
@@ -147,6 +151,8 @@ class Product(BaseModel):
                 "name": result[1],
                 "image": result[2],
                 "price": result[3],
+                "rating": result[4],
+                "discount": result[5]
             }
 
         products = list(map(to_dict, results))
