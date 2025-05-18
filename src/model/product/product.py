@@ -36,16 +36,25 @@ class Product(BaseModel):
 
         altres = "altres"
 
+    class Condition(Enum):
+        nou = "nou"
+        com_nou = "com_nou"
+        usat = "usat"
+        amb_defectes = "amb_defectes"
+        per_recanvis = "per_recanvis"
+        none = "-"
+
     id: Optional[UUID] = None
     owner: Optional[UUID] = None
     name: str = ""
     description: str = ""
     price: float = 0.0
     image: str = ""
+    rating: Optional[float] = None
+    discount: Optional[float] = None
+    deleted: Optional[bool] = None
     category: Category = Category.altres
-    discount: float = 0.0
-    rating: float = 0.0
-    deleted: bool = False
+    condition: Condition = Condition.none
 
     @staticmethod
     def factory(cursor: Cursor, product_id: UUID):
@@ -95,25 +104,25 @@ class Product(BaseModel):
         query: Optional[str],
         page: int,
         category: Optional[Category],
+        condition: Optional[Condition],
         price_min: float,
         price_max: float,
-        owner: Optional[UUID],
+        owner: Optional[UUID] = None,
     ):
         sql_query = """
             WITH products AS (
-                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner,
-                    (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS rating, vp_discount AS discount, vp_deleted AS deleted
+                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner, (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS rating, vp_discount AS discount, vp_deleted AS deleted, vp_condition AS condition
                 FROM chopchop.verified_product
                 WHERE vp_deleted = FALSE
 
                 UNION
 
-                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category, sp_owner AS owner,
-                    (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS rating, sp_discount AS discount, sp_deleted AS deleted
+                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as price, sp_category AS category, sp_owner AS owner , (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS rating, sp_discount AS discount, sp_deleted AS deleted, sp_condition AS condition
                 FROM chopchop.secondhand_product
                 WHERE sp_deleted = FALSE
             )
-            SELECT id, name, image, price, rating, discount FROM products
+            SELECT id, name, image, price, category, rating, discount, condition FROM products
+
         """
         sql_query_parameters = []
         conditions = []
@@ -127,9 +136,14 @@ class Product(BaseModel):
             conditions.append("category = %s")
             sql_query_parameters.append(category)
 
+        if condition:
+            conditions.append("condition = %s")
+            sql_query_parameters.append(condition)
+        
         if owner:
-            conditions.append("owner = %s")
+            conditions.append("sp_owner = %s")
             sql_query_parameters.append(owner)
+
 
         conditions.append("""
             price BETWEEN %s AND %s
@@ -151,8 +165,10 @@ class Product(BaseModel):
                 "name": result[1],
                 "image": result[2],
                 "price": result[3],
-                "rating": result[4],
-                "discount": result[5]
+                "category": result[4],
+                "rating": result[5],
+                "discount": result[6],
+                "condition": result[7]
             }
 
         products = list(map(to_dict, results))
@@ -173,6 +189,7 @@ class NewProduct(BaseModel):
     price: float
     image: str
     category: Product.Category
+    condition: Product.Condition
 
     def factory(self):
         match self.type:
@@ -192,6 +209,7 @@ class NewProduct(BaseModel):
                     price=self.price,
                     image=self.image,
                     category=self.category,
+                    condition=self.condition,
                 )
 
             case self.Type.SECONDHAND:
@@ -203,4 +221,5 @@ class NewProduct(BaseModel):
                     price=self.price,
                     image=self.image,
                     category=self.category,
+                    condition=self.condition,
                 )

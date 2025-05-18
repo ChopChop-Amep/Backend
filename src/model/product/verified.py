@@ -16,7 +16,7 @@ class VerifiedProduct(Product):
         query_verified = sql.SQL(
             """
             SELECT vp_id, vp_owner, vp_sku, vp_name, vp_description, vp_stock, vp_price, vp_image, vp_category, vp_sold, 
-            (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS vp_rating ,vp_discount, vp_deleted
+            (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS vp_rating ,vp_discount, vp_deleted, vp_condition
             FROM chopchop.verified_product
             WHERE vp_id = %s;
             """
@@ -38,6 +38,7 @@ class VerifiedProduct(Product):
         self.rating = response[10]
         self.discount = response[11]
         self.deleted = response[12]
+        self.condition = "nou"
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Professional) or isinstance(user, Enterprise)):
@@ -61,9 +62,10 @@ class VerifiedProduct(Product):
                 vp_stock, 
                 vp_price, 
                 vp_image, 
-                vp_category
+                vp_category,
+                vp_condition
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """)
 
         cursor.execute(
@@ -78,6 +80,7 @@ class VerifiedProduct(Product):
                 self.price,
                 self.image,
                 self.category.value,
+                self.condition.value
             ),
         )
 

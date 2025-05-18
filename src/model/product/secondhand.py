@@ -12,7 +12,7 @@ class SecondhandProduct(Product):
         query_secondhand = sql.SQL(
             """
             SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category, 
-            (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS sp_rating, sp_discount, sp_deleted
+            (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS sp_rating, sp_discount, sp_deleted, sp_condition
             FROM chopchop.secondhand_product
             WHERE sp_id = %s;
             """
@@ -30,6 +30,7 @@ class SecondhandProduct(Product):
         self.rating = response[7]
         self.discount = response[8]
         self.deleted = response[9]
+        self.condition = response[10]
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Particular) or isinstance(user, Professional)):
@@ -52,8 +53,9 @@ class SecondhandProduct(Product):
                 sp_price, 
                 sp_image, 
                 sp_category
+                sp_condition
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """)
         cursor.execute(
             insert_secondhand_query,
@@ -65,6 +67,7 @@ class SecondhandProduct(Product):
                 self.price,
                 self.image,
                 self.category.value,
+                self.condition.value,
             ),
         )
 
@@ -94,7 +97,8 @@ class SecondhandProduct(Product):
                 sp_description = %s, 
                 sp_price = %s, 
                 sp_image = %s, 
-                sp_category = %s
+                sp_category = %s,
+                sp_condition = %s
             WHERE sp_id = %s AND sp_owner = %s
             RETURNING 'success'
         """)
@@ -106,6 +110,7 @@ class SecondhandProduct(Product):
                 self.price,
                 self.image,
                 self.category.value,
+                self.condition.value,
                 self.sp_id,
                 user.id,
             ),
