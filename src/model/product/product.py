@@ -139,11 +139,10 @@ class Product(BaseModel):
         if condition:
             conditions.append("condition = %s")
             sql_query_parameters.append(condition)
-        
+
         if owner:
             conditions.append("sp_owner = %s")
             sql_query_parameters.append(owner)
-
 
         conditions.append("""
             price BETWEEN %s AND %s
