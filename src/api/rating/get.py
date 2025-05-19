@@ -39,7 +39,8 @@ async def get_product_rating(product_id: UUID):
             with conn.cursor() as cursor:
                 rating = Rating.get_product_rating(cursor, product_id)
                 if not rating:
-                    raise HTTPException(status_code=404, detail="Rating not found")
+                    raise HTTPException(
+                        status_code=404, detail="Rating not found")
                 return rating
 
     except HTTPException as e:

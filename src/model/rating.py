@@ -12,7 +12,6 @@ class Rating(BaseModel):
     product_id: Optional[UUID] = None
     rating: Optional[float] = None
 
-
     def fetch(self, cursor: Cursor, rating_id: UUID):
         """Fetch a rating by ID"""
         query = sql.SQL(
@@ -44,7 +43,7 @@ class Rating(BaseModel):
             VALUES (%s, %s)
             RETURNING ra_id
         """)
-        
+
         cursor.execute(
             insert_query,
             (
@@ -52,10 +51,10 @@ class Rating(BaseModel):
                 self.rating,
             ),
         )
-        
+
         rating_id = cursor.fetchone()[0]
         self.id = rating_id
-        
+
         return rating_id
 
     def update(self, cursor: Cursor):
@@ -66,7 +65,7 @@ class Rating(BaseModel):
             WHERE ra_product_id = %s
             RETURNING ra_id
         """)
-        
+
         cursor.execute(
             update_query,
             (
@@ -74,17 +73,17 @@ class Rating(BaseModel):
                 self.product_id,
             ),
         )
-        
+
         result = cursor.fetchone()
         if not result:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Rating not found")
-            
+
         rating_id = result[0]
         self.id = rating_id
-        
+
         return rating_id
-        
+
     @staticmethod
     def get_product_rating(cursor: Cursor, product_id: UUID):
         """Get rating for a product"""
@@ -96,11 +95,11 @@ class Rating(BaseModel):
             """
         )
         cursor.execute(query, (product_id,))
-        
+
         result = cursor.fetchone()
         if not result:
             return None
-            
+
         return {
             "id": result[0],
             "product_id": result[1],

@@ -19,10 +19,10 @@ async def post_rating(
 ):
     if rating_value < 1 or rating_value > 5:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="Rating must be between 1 and 5"
         )
-        
+
     try:
         conn = get_db_connection()
         with conn:
