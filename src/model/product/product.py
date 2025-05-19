@@ -11,30 +11,30 @@ PRODUCTS_PER_PAGE = 12
 
 class Product(BaseModel):
     class Category(Enum):
-        ARTESANAL = "artesanal"
-        ANTIGUITATS = "antiguitats"
-        COSMETICA = "cosmetica"
-        CUINA = "cuina"
-        ELECTRODOMESTICS = "electrodomestics"
-        ELECTRONICA = "electronica"
-        EQUIPAMENT_LAB = "equipament_lab"
-        ESPORTS = "esports"
-        FERRAMENTES = "ferramentes"
-        INFANTIL = "infantil"
-        INSTRUMENTS = "instruments"
-        JARDINERIA = "jardineria"
-        JOCS_DE_TAULA = "jocs_de_taula"
-        JOIES_COMPLEMENTS_ACCESSORIS = "joies_complements_accessoris"
-        LLIBRES = "llibres"
-        MASCOTES = "mascotes"
-        MOBLES = "mobles"
-        NETEJA = "neteja"
-        ROBA = "roba"
-        SABATES = "sabates"
-        VEHICLES = "vehicles"
-        VIDEOJOCS = "videojocs"
+        artesanal = "artesanal"
+        antiguitats = "antiguitats"
+        cosmetica = "cosmetica"
+        cuina = "cuina"
+        electrodomestics = "electrodomestics"
+        electronica = "electronica"
+        equipament_lab = "equipament_lab"
+        esports = "esports"
+        ferramentes = "ferramentes"
+        infantil = "infantil"
+        instruments = "instruments"
+        jardineria = "jardineria"
+        jocs_de_taula = "jocs_de_taula"
+        joies_complements_accessoris = "joies_complements_accessoris"
+        llibres = "llibres"
+        mascotes = "mascotes"
+        mobles = "mobles"
+        neteja = "neteja"
+        roba = "roba"
+        sabates = "sabates"
+        vehicles = "vehicles"
+        videojocs = "videojocs"
 
-        ALTRES = "altres"
+        altres = "altres"
 
     id: Optional[UUID] = None
     owner: Optional[UUID] = None
@@ -42,7 +42,10 @@ class Product(BaseModel):
     description: str = ""
     price: float = 0.0
     image: str = ""
-    category: Category = Category.ALTRES
+    category: Category = Category.altres
+    discount: float = 0.0
+    rating: float = 0.0
+    deleted: bool = False
 
     @staticmethod
     def factory(cursor: Cursor, product_id: UUID):
@@ -94,18 +97,23 @@ class Product(BaseModel):
         category: Optional[Category],
         price_min: float,
         price_max: float,
+        owner: Optional[UUID],
     ):
         sql_query = """
             WITH products AS (
-                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category
+                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner,
+                    (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE vp_id = ratings.ra_product_id) AS rating, vp_discount AS discount, vp_deleted AS deleted
                 FROM chopchop.verified_product
+                WHERE vp_deleted = FALSE
 
                 UNION
 
-                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category
+                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category, sp_owner AS owner,
+                    (SELECT AVG(ra_rating) FROM chopchop.ratings WHERE sp_id = ratings.ra_product_id) AS rating, sp_discount AS discount, sp_deleted AS deleted
                 FROM chopchop.secondhand_product
+                WHERE sp_deleted = FALSE
             )
-            SELECT id, name, image, price FROM products
+            SELECT id, name, image, price, rating, discount FROM products
         """
         sql_query_parameters = []
         conditions = []
@@ -113,11 +121,15 @@ class Product(BaseModel):
         # ============== Add filters =============== #
         if query:
             conditions.append("name ILIKE %s")
-            sql_query_parameters.append(query)
+            sql_query_parameters.append(f"%{query}%")
 
         if category:
             conditions.append("category = %s")
             sql_query_parameters.append(category)
+
+        if owner:
+            conditions.append("owner = %s")
+            sql_query_parameters.append(owner)
 
         conditions.append("""
             price BETWEEN %s AND %s
@@ -138,7 +150,9 @@ class Product(BaseModel):
                 "id": result[0],
                 "name": result[1],
                 "image": result[2],
-                "price": result[3]
+                "price": result[3],
+                "rating": result[4],
+                "discount": result[5]
             }
 
         products = list(map(to_dict, results))
