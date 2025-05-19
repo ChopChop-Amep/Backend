@@ -4,8 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel
 from psycopg import sql, Cursor
 
-from model.user import User
-
 
 class Rating(BaseModel):
     id: Optional[UUID] = None
