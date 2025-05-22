@@ -1,7 +1,6 @@
 from model.user import User
 from auth import authenticate
 from fastapi import APIRouter, Depends, HTTPException
-from uuid import UUID
 
 from database import get_db_connection
 from model.rating import Rating
