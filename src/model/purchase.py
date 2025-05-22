@@ -101,4 +101,56 @@ class Purchase(BaseModel):
 
         return purchase_id
 
+
+def my_purchases(self, cursor: Cursor, filter_date: Optional[datetime.date] = None):
+    if filter_date:
+        query = sql.SQL("""
+            SELECT pu_id, pu_date
+            FROM chopchop.purchase
+            WHERE pu_user_id = %s
+            AND DATE(pu_date) = %s
+            ORDER BY pu_date DESC;
+        """)
+        cursor.execute(query, (self.user_id, filter_date))
+    else:
+        query = sql.SQL("""
+            SELECT pu_id, pu_date
+            FROM chopchop.purchase
+            WHERE pu_user_id = %s
+            ORDER BY pu_date DESC;
+        """)
+        cursor.execute(query, (self.user_id,))
+
+    purchases = cursor.fetchall()
+    results = []
+
+    for purchase_id, pu_date in purchases:
+        purchase_data = {
+            "id": str(purchase_id),
+            "date": pu_date.isoformat(),
+            "items": []
+        }
+
+        # Get associated purchase items
+        cursor.execute(
+            sql.SQL("""
+                SELECT pi_product_id, pi_count, pi_paid
+                FROM chopchop.purchase_item
+                WHERE pi_purchase_id = %s;
+            """),
+            (purchase_id,)
+        )
+        items = cursor.fetchall()
+
+        for product_id, count, paid in items:
+            purchase_data["items"].append({
+                "product_id": str(product_id),
+                "count": count,
+                "paid": float(paid)
+            })
+
+        results.append(purchase_data)
+
+    return results
+
     # No delete or update methods, purchases are final!
