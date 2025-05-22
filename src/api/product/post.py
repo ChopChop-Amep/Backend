@@ -22,7 +22,7 @@ async def post_product(product: NewProduct, user: User = Depends(authenticate)):
                 )
 
                 try:
-                    product = product.into_product()
+                    product = product.factory()
                     product_id = product.insert(cursor, user)
                     conn.commit()  # Cometre la transacció si tot ha anat bé
                     return product_id
