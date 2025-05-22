@@ -15,7 +15,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def verify_jwt_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, SECRET_KEY, algorithms=[ALGORITHM], audience="authenticated"
+        )
         metadata = payload.get("user_metadata")
         type = User.Type(metadata.get("type"))
 
@@ -50,7 +52,8 @@ def verify_jwt_token(token: str):
                     surname=metadata.get("surname"),
                 )
 
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as e:
+        print(f"AUTH FAILED: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authorization token could not be validated",

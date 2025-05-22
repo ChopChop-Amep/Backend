@@ -19,18 +19,15 @@ class Purchase(BaseModel):
         count: int
         paid: float
 
-        def __init__(self, product_id: UUID, count: int, paid: float):
-            self.product_id = product_id
-            self.count = count
-            self.paid = paid
-
     items: List[PurchaseItem] = []
 
-    def __init__(self, user: User):
+    def __init__(self, user: User, **data):
+        # Check if the user is allowed to make purchases
         if not (isinstance(user, Particular) or isinstance(user, Professional)):
             raise Exception("This user is not allowed to make purchases")
 
-        self.user_id = user.id
+        # Call the parent class's __init__ method with the provided data
+        super().__init__(user_id=user.id, **data)
 
     def fetch(self, cursor: Cursor, purchase_id: UUID):
         query_purchase = sql.SQL(
@@ -83,7 +80,7 @@ class Purchase(BaseModel):
                 pi_purchase_id,
                 pi_product_id,
                 pi_count,
-                pi_paid,
+                pi_paid
             )
             VALUES (%s, %s, %s, %s)
         """)
