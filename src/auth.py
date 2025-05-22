@@ -16,38 +16,38 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def verify_jwt_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        metadata = payload.get("user_metadata")
+        type = User.Type(metadata.get("type"))
 
-        type_ = User.Type(payload.get("type"))
-
-        match type_:
+        match type:
             case User.Type.PARTICULAR:
                 return Particular(
                     id=UUID(payload.get("sub")),
-                    name=payload.get("name"),
-                    surname=payload.get("surname"),
+                    name=metadata.get("name"),
+                    surname=metadata.get("surname"),
                 )
 
             case User.Type.PROFESSIONAL:
                 return Professional(
                     id=UUID(payload.get("sub")),
-                    name=payload.get("name"),
-                    surname=payload.get("surname"),
-                    nif=payload.get("nif"),
+                    name=metadata.get("name"),
+                    surname=metadata.get("surname"),
+                    nif=metadata.get("nif"),
                 )
 
             case User.Type.ENTERPRISE:
                 return Enterprise(
                     id=UUID(payload.get("sub")),
-                    name=payload.get("name"),
-                    surname=payload.get("surname"),
-                    nif=payload.get("nif"),
+                    name=metadata.get("name"),
+                    surname=metadata.get("surname"),
+                    nif=metadata.get("nif"),
                 )
 
             case User.Type.ADMIN:
                 return Admin(
                     id=UUID(payload.get("sub")),
-                    name=payload.get("name"),
-                    surname=payload.get("surname"),
+                    name=metadata.get("name"),
+                    surname=metadata.get("surname"),
                 )
 
     except jwt.PyJWTError:
