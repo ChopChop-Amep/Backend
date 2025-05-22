@@ -1,24 +1,22 @@
-from model.user import User
-from auth import authenticate
 from fastapi import APIRouter, Depends, HTTPException
 
 from database import get_db_connection
 from model.rating import Rating
+from model.user import User
+from auth import authenticate
 
 
 router = APIRouter()
 
 
-@router.post(
-    "/rating", description="Submit or update a rating"
-)
+@router.post("/rating", description="Submit or update a rating")
 async def post_rating(rating: Rating, user: User = Depends(authenticate)):
     rating.owner_id = user.id  # Inject authenticated user ID
 
     if not rating.product_id:
         raise HTTPException(status_code=400, detail="Missing product_id")
 
-    if rating.rating is None or not (1.0 <= rating.rating <= 5.0):
+    if rating.value is None or not (1.0 <= rating.value <= 5.0):
         raise HTTPException(
             status_code=400, detail="Rating must be between 1 and 5")
 
@@ -29,26 +27,31 @@ async def post_rating(rating: Rating, user: User = Depends(authenticate)):
                 conn.autocommit = False
 
                 # Check if the user has purchased this product
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT 1
                     FROM chopchop.purchase_item pi
                     JOIN chopchop.purchase p ON pi.pi_purchase_id = p.pu_id
                     WHERE pi.pi_product_id = %s AND p.pu_user_id = %s
                     LIMIT 1;
-                """, (str(rating.product_id), str(rating.owner_id)))
+                """,
+                    (str(rating.product_id), str(rating.owner_id)),
+                )
 
                 if not cursor.fetchone():
                     raise HTTPException(
-                        status_code=403,
-                        detail="User has not purchased this product"
+                        status_code=403, detail="User has not purchased this product"
                     )
 
                 try:
                     # Check if rating already exists
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         SELECT 1 FROM chopchop.ratings
                         WHERE ra_product_id = %s AND ra_owner_id = %s
-                    """, (str(rating.product_id), str(rating.owner_id)))
+                    """,
+                        (str(rating.product_id), str(rating.owner_id)),
+                    )
 
                     if cursor.fetchone():
                         rating.update(cursor)

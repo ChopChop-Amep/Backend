@@ -9,41 +9,17 @@ router = APIRouter()
 
 
 @router.get(
-    "/rating/{rating_id}",
-    description="Get a specific rating by ID",
+    "/rating",
+    description="Get a specific user's rating for a product",
 )
-async def get_rating(rating_id: UUID):
+async def get_rating(owner_id: UUID, product_id: UUID):
     try:
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
-                rating = Rating()
-                return rating.fetch(cursor, rating_id)
+                rating = Rating(owner_id, product_id).fetch(cursor)
+                return rating.rating
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    finally:
-        conn.close()
-
-
-@router.get(
-    "/rating/product/{product_id}",
-    description="Get rating for a specific product",
-)
-async def get_product_rating(product_id: UUID):
-    try:
-        conn = get_db_connection()
-        with conn:
-            with conn.cursor() as cursor:
-                rating = Rating.get_product_rating(cursor, product_id)
-                if not rating:
-                    raise HTTPException(
-                        status_code=404, detail="Rating not found")
-                return rating
-
-    except HTTPException as e:
-        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

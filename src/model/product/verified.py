@@ -15,7 +15,21 @@ class VerifiedProduct(Product):
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_verified = sql.SQL(
             """
-            SELECT vp_id, vp_owner, vp_sku, vp_name, vp_description, vp_stock, vp_price, vp_image, vp_category, vp_sold, vp_rating ,vp_discount, vp_deleted, vp_condition
+            SELECT 
+                vp_id, 
+                vp_owner, 
+                vp_sku, 
+                vp_name,
+                vp_description,
+                vp_stock,
+                vp_price,
+                vp_image,
+                vp_category,
+                vp_sold,
+                vp_rating,
+                vp_discount,
+                vp_deleted,
+                vp_condition
             FROM chopchop.verified_product
             WHERE vp_id = %s;
             """
@@ -37,7 +51,7 @@ class VerifiedProduct(Product):
         self.rating = response[10]
         self.discount = response[11]
         self.deleted = response[12]
-        self.condition = "nou"
+        self.condition = response[13]
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Professional) or isinstance(user, Enterprise)):
@@ -79,14 +93,18 @@ class VerifiedProduct(Product):
                 self.price,
                 self.image,
                 self.category.value,
-                self.condition.value
+                self.condition.value,
             ),
         )
 
         return product_id
 
     def delete(self, cursor: Cursor, user: User):
-        query = "DELETE FROM chopchop.verified_product WHERE vp_id = %s AND vp_owner = %s RETURNING 'success'"
+        query = """
+            DELETE FROM chopchop.verified_product
+            WHERE vp_id = %s AND vp_owner = %s
+            RETURNING 'success'"
+        """
         if isinstance(user, Admin):
             query = (  # If tne user is an admin, skip product owner check
                 "DELETE FROM chopchop.verified_product WHERE vp_id = %s RETURNING 'success'"

@@ -11,7 +11,18 @@ class SecondhandProduct(Product):
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_secondhand = sql.SQL(
             """
-            SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category, sp_rating, sp_discount, sp_deleted, sp_condition
+            SELECT 
+                sp_id, 
+                sp_owner, 
+                sp_name, 
+                sp_description, 
+                sp_price, 
+                sp_image, 
+                sp_category, 
+                sp_rating, 
+                sp_discount, 
+                sp_deleted, 
+                sp_condition
             FROM chopchop.secondhand_product
             WHERE sp_id = %s;
             """
@@ -73,7 +84,11 @@ class SecondhandProduct(Product):
         return product_id
 
     def delete(self, cursor: Cursor, user: User):
-        query = "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s AND sp_owner = %s RETURNING 'success'"
+        query = """
+            DELETE FROM chopchop.secondhand_product 
+            WHERE sp_id = %s AND sp_owner = %s 
+            RETURNING 'success'
+        """
         if isinstance(user, Admin):
             query = (  # If tne user is an admin, skip product owner check
                 "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s RETURNING 'success'"
