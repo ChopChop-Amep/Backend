@@ -14,6 +14,9 @@ from api.products.get import router as products_get_router
 from api.purchase.get import router as purchase_get_router
 from api.purchase.post import router as purchase_post_router
 
+from api.rating.get import router as rating_get_router
+from api.rating.post import router as rating_post_router
+
 
 api = FastAPI()
 
@@ -38,3 +41,6 @@ api.include_router(products_get_router)
 
 api.include_router(purchase_get_router)
 api.include_router(purchase_post_router)
+
+api.include_router(rating_get_router)
+api.include_router(rating_post_router)
