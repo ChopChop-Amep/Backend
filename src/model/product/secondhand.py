@@ -11,7 +11,18 @@ class SecondhandProduct(Product):
     def fetch(self, cursor: Cursor, product_id: UUID):
         query_secondhand = sql.SQL(
             """
-            SELECT sp_id, sp_owner, sp_name, sp_description, sp_price, sp_image, sp_category
+            SELECT 
+                sp_id, 
+                sp_owner, 
+                sp_name, 
+                sp_description, 
+                sp_price, 
+                sp_image, 
+                sp_category, 
+                sp_rating, 
+                sp_discount, 
+                sp_deleted, 
+                sp_condition
             FROM chopchop.secondhand_product
             WHERE sp_id = %s;
             """
@@ -26,6 +37,10 @@ class SecondhandProduct(Product):
         self.price = float(response[4])
         self.image = response[5]
         self.category = self.Category(response[6])
+        self.rating = response[7]
+        self.discount = response[8]
+        self.deleted = response[9]
+        self.condition = response[10]
 
     def insert(self, cursor: Cursor, user: User):
         if not (isinstance(user, Particular) or isinstance(user, Professional)):
@@ -48,8 +63,9 @@ class SecondhandProduct(Product):
                 sp_price, 
                 sp_image, 
                 sp_category
+                sp_condition
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """)
         cursor.execute(
             insert_secondhand_query,
@@ -61,13 +77,18 @@ class SecondhandProduct(Product):
                 self.price,
                 self.image,
                 self.category.value,
+                self.condition.value,
             ),
         )
 
         return product_id
 
     def delete(self, cursor: Cursor, user: User):
-        query = "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s AND sp_owner = %s RETURNING 'success'"
+        query = """
+            DELETE FROM chopchop.secondhand_product 
+            WHERE sp_id = %s AND sp_owner = %s 
+            RETURNING 'success'
+        """
         if isinstance(user, Admin):
             query = (  # If tne user is an admin, skip product owner check
                 "DELETE FROM chopchop.secondhand_product WHERE sp_id = %s RETURNING 'success'"
@@ -90,7 +111,8 @@ class SecondhandProduct(Product):
                 sp_description = %s, 
                 sp_price = %s, 
                 sp_image = %s, 
-                sp_category = %s
+                sp_category = %s,
+                sp_condition = %s
             WHERE sp_id = %s AND sp_owner = %s
             RETURNING 'success'
         """)
@@ -102,6 +124,7 @@ class SecondhandProduct(Product):
                 self.price,
                 self.image,
                 self.category.value,
+                self.condition.value,
                 self.sp_id,
                 user.id,
             ),

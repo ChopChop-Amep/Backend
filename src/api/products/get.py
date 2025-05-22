@@ -17,6 +17,8 @@ async def get_products(
     query: Optional[str] = Query(None),
     page: Optional[int] = Query(0),
     category: Optional[Product.Category] = Query(None),
+    condition: Optional[Product.Condition] = Query(None),
+    rating: Optional[int] = Query(None, ge=1, le=5),
     min_price: Optional[float] = Query(0.0),
     max_price: Optional[float] = Query(float("inf")),
     owner: Optional[UUID] = Query(None),
@@ -26,11 +28,17 @@ async def get_products(
         with conn:
             with conn.cursor() as cursor:
                 return Product.get_products(
-                    cursor, query, page, category, min_price, max_price, owner
+                    cursor,
+                    query,
+                    page,
+                    category,
+                    condition,
+                    rating,
+                    min_price,
+                    max_price,
+                    owner,
                 )
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
     finally:
         conn.close()

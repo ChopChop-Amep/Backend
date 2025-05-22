@@ -36,13 +36,25 @@ class Product(BaseModel):
 
         altres = "altres"
 
+    class Condition(Enum):
+        nou = "nou"
+        com_nou = "com_nou"
+        usat = "usat"
+        amb_defectes = "amb_defectes"
+        per_recanvis = "per_recanvis"
+        none = "-"
+
     id: Optional[UUID] = None
     owner: Optional[UUID] = None
     name: str = ""
     description: str = ""
     price: float = 0.0
     image: str = ""
+    rating: float = 0.0
+    discount: float = 0.0
+    deleted: bool = False
     category: Category = Category.altres
+    condition: Condition = Condition.none
 
     @staticmethod
     def factory(cursor: Cursor, product_id: UUID):
@@ -91,27 +103,52 @@ class Product(BaseModel):
         cursor: Cursor,
         query: Optional[str],
         page: int,
-        category: Optional[Category],
-        price_min: float,
-        price_max: float,
-        owner: Optional[UUID],
+        category: Optional["Product.Category"],
+        condition: Optional["Product.Condition"],
+        rating: Optional[int],
+        min_price: float,
+        max_price: float,
+        owner: Optional[UUID] = None,
     ):
         sql_query = """
             WITH products AS (
-                SELECT vp_id AS id, vp_name AS name, vp_image AS image, vp_price AS price, vp_category AS category, vp_owner AS owner
+                SELECT 
+                    vp_id AS id, 
+                    vp_name AS name, 
+                    vp_image AS image, 
+                    vp_price AS price, 
+                    vp_category AS category, 
+                    vp_owner AS owner, 
+                    vp_rating AS rating, 
+                    vp_discount AS discount, 
+                    vp_deleted AS deleted, 
+                    vp_condition AS condition
                 FROM chopchop.verified_product
+                WHERE vp_deleted = FALSE
 
                 UNION
 
-                SELECT sp_id AS id, sp_name AS name, sp_image AS image, sp_price as PRICE, sp_category AS category, sp_owner AS owner
+                SELECT 
+                    sp_id AS id, 
+                    sp_name AS name, 
+                    sp_image AS image, 
+                    sp_price as price, 
+                    sp_category AS category, 
+                    sp_owner AS owner, 
+                    sp_rating AS rating, 
+                    sp_discount AS discount, 
+                    sp_deleted AS deleted, 
+                    sp_condition AS condition
                 FROM chopchop.secondhand_product
+                WHERE sp_deleted = FALSE
             )
-            SELECT id, name, image, price FROM products
+            SELECT id, name, image, price, category, rating, discount, condition FROM products
         """
+
         sql_query_parameters = []
         conditions = []
 
-        # ============== Add filters =============== #
+        # ===== Add filters =====
         if query:
             conditions.append("name ILIKE %s")
             sql_query_parameters.append(f"%{query}%")
@@ -120,20 +157,31 @@ class Product(BaseModel):
             conditions.append("category = %s")
             sql_query_parameters.append(category)
 
+        if condition:
+            conditions.append("condition = %s")
+            sql_query_parameters.append(condition)
+
+        if rating:
+            conditions.append("rating >= %s AND rating < %s")
+            sql_query_parameters.extend([float(rating), 5.0])
+
         if owner:
             conditions.append("owner = %s")
             sql_query_parameters.append(owner)
 
-        conditions.append("""
-            price BETWEEN %s AND %s
-            LIMIT %s OFFSET %s
-        """)
-        sql_query_parameters.extend(
-            [price_min, price_max, PRODUCTS_PER_PAGE, page * PRODUCTS_PER_PAGE]
-        )
+        conditions.append("price BETWEEN %s AND %s")
+        sql_query_parameters.extend([min_price, max_price])
 
-        sql_query += " WHERE " + " AND ".join(conditions)
-        # ========================================== #
+        if conditions:
+            sql_query += " WHERE " + " AND ".join(conditions)
+        # =======================
+
+        if rating:
+            sql_query += " ORDER BY rating DESC"
+
+        sql_query += " LIMIT %s OFFSET %s"
+        sql_query_parameters.extend(
+            [PRODUCTS_PER_PAGE, page * PRODUCTS_PER_PAGE])
 
         cursor.execute(sql_query, sql_query_parameters)
         results = cursor.fetchall()
@@ -143,11 +191,14 @@ class Product(BaseModel):
                 "id": result[0],
                 "name": result[1],
                 "image": result[2],
-                "price": result[3]
+                "price": result[3],
+                "category": result[4],
+                "rating": result[5],
+                "discount": result[6],
+                "condition": result[7],
             }
 
-        products = list(map(to_dict, results))
-        return products
+        return list(map(to_dict, results))
 
 
 # Used to seralize the recieved json for the POST request on /product
@@ -164,6 +215,7 @@ class NewProduct(BaseModel):
     price: float
     image: str
     category: Product.Category
+    condition: Product.Condition
 
     def factory(self):
         match self.type:
@@ -183,6 +235,7 @@ class NewProduct(BaseModel):
                     price=self.price,
                     image=self.image,
                     category=self.category,
+                    condition=self.condition,
                 )
 
             case self.Type.SECONDHAND:
@@ -194,4 +247,5 @@ class NewProduct(BaseModel):
                     price=self.price,
                     image=self.image,
                     category=self.category,
+                    condition=self.condition,
                 )
