@@ -162,7 +162,7 @@ class Product(BaseModel):
             sql_query_parameters.append(condition)
 
         if rating:
-            conditions.append("rating >= %s AND rating < %s")
+            conditions.append("rating >= %s AND rating <= %s")
             sql_query_parameters.extend([float(rating), 5.0])
 
         if owner:
