@@ -1,4 +1,6 @@
+from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -7,8 +9,6 @@ from database import get_db_connection
 from model.purchase import Purchase
 from model.user import User
 
-from datetime import date as Date
-from typing import Optional
 
 router = APIRouter()
 
@@ -32,16 +32,20 @@ async def get_products(purchase_id: UUID, user: User = Depends(authenticate)):
 
 
 @router.get(
-    "/purchase/my_purchases",
-    description="Retrieve all purchases ordered by date of the user"
+    "/my/purchases/",
+    description="Retrieve all the user's purchases up to a certain date",
 )
-async def get_my_purchases(date: Optional[Date] = None, user: User = Depends(authenticate)):
+async def get_my_purchases(
+    date: Optional[datetime] = None, user: User = Depends(authenticate)
+):
     try:
         conn = get_db_connection()
         with conn:
             with conn.cursor() as cursor:
                 return Purchase(user).my_purchases(cursor, date)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         conn.close()

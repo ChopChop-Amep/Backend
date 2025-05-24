@@ -22,11 +22,9 @@ class Purchase(BaseModel):
     items: List[PurchaseItem] = []
 
     def __init__(self, user: User, **data):
-        # Check if the user is allowed to make purchases
         if not (isinstance(user, Particular) or isinstance(user, Professional)):
             raise Exception("This user is not allowed to make purchases")
 
-        # Call the parent class's __init__ method with the provided data
         super().__init__(user_id=user.id, **data)
 
     def fetch(self, cursor: Cursor, purchase_id: UUID):
@@ -99,55 +97,44 @@ class Purchase(BaseModel):
         return purchase_id
 
 
-def my_purchases(self, cursor: Cursor, filter_date: Optional[datetime.date] = None):
-    if filter_date:
-        query = sql.SQL("""
-            SELECT pu_id, pu_date
-            FROM chopchop.purchase
-            WHERE pu_user_id = %s
-            AND DATE(pu_date) = %s
-            ORDER BY pu_date DESC;
-        """)
-        cursor.execute(query, (self.user_id, filter_date))
-    else:
-        query = sql.SQL("""
-            SELECT pu_id, pu_date
-            FROM chopchop.purchase
-            WHERE pu_user_id = %s
-            ORDER BY pu_date DESC;
-        """)
-        cursor.execute(query, (self.user_id,))
+def fetch_by_user(self, cursor: Cursor, date: Optional[datetime]):
+    query = """
+        SELECT pu_id, pu_date
+        FROM chopchop.purchase
+    """
 
+    conditions = ["pu_user_id = %s"]
+    sql_query_parameters = [self.user_id]
+
+    if date:
+        conditions.append("DATE(pu_date) = %s")
+        sql_query_parameters.append(date)
+
+    query += " WHERE " + " AND ".join(conditions)
+
+    cursor.execute(query, sql_query_parameters)
     purchases = cursor.fetchall()
-    results = []
+    purchases = []
 
-    for purchase_id, pu_date in purchases:
-        purchase_data = {
-            "id": str(purchase_id),
-            "date": pu_date.isoformat(),
-            "items": []
-        }
+    for id, date in purchases:
+        purchase = Purchase(id=id, user_id=self.user_id, date=date)
 
-        # Get associated purchase items
         cursor.execute(
             sql.SQL("""
                 SELECT pi_product_id, pi_count, pi_paid
                 FROM chopchop.purchase_item
                 WHERE pi_purchase_id = %s;
             """),
-            (purchase_id,)
+            (id,),
         )
         items = cursor.fetchall()
 
         for product_id, count, paid in items:
-            purchase_data["items"].append({
-                "product_id": str(product_id),
-                "count": count,
-                "paid": float(paid)
-            })
+            item = self.PurchaseItem(product_id=product_id, count=count, paid=paid)
+            purchase.items.append(item)
 
-        results.append(purchase_data)
+        purchases.append(purchase)
 
-    return results
+    return purchases
 
     # No delete or update methods, purchases are final!
