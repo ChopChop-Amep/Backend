@@ -5,6 +5,11 @@ from pydantic import BaseModel
 from psycopg import sql, Cursor
 
 
+class RatingInput(BaseModel):
+    product_id: UUID
+    value: float
+
+
 class Rating(BaseModel):
     owner_id: UUID
     product_id: UUID

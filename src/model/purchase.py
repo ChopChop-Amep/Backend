@@ -130,7 +130,8 @@ def fetch_by_user(self, cursor: Cursor, date: Optional[datetime]):
         items = cursor.fetchall()
 
         for product_id, count, paid in items:
-            item = self.PurchaseItem(product_id=product_id, count=count, paid=paid)
+            item = self.PurchaseItem(
+                product_id=product_id, count=count, paid=paid)
             purchase.items.append(item)
 
         purchases.append(purchase)

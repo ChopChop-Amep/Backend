@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from database import get_db_connection
-from model.rating import Rating
+from model.rating import Rating, RatingInput
 from model.user import User
 from auth import authenticate
 
@@ -10,15 +10,16 @@ router = APIRouter()
 
 
 @router.post("/rating", description="Submit or update a rating")
-async def post_rating(rating: Rating, user: User = Depends(authenticate)):
-    rating.owner_id = user.id  # Inject authenticated user ID
-
-    if not rating.product_id:
-        raise HTTPException(status_code=400, detail="Missing product_id")
-
-    if rating.value is None or not (1.0 <= rating.value <= 5.0):
+async def post_rating(input: RatingInput, user: User = Depends(authenticate)):
+    if input.value is None or not (1.0 <= input.value <= 5.0):
         raise HTTPException(
             status_code=400, detail="Rating must be between 1 and 5")
+
+    rating = Rating(
+        owner_id=user.id,
+        product_id=input.product_id,
+        value=input.value,
+    )
 
     try:
         conn = get_db_connection()
@@ -26,7 +27,7 @@ async def post_rating(rating: Rating, user: User = Depends(authenticate)):
             with conn.cursor() as cursor:
                 conn.autocommit = False
 
-                # Check if the user has purchased this product
+                # Ensure user has purchased the product
                 cursor.execute(
                     """
                     SELECT 1
@@ -43,29 +44,25 @@ async def post_rating(rating: Rating, user: User = Depends(authenticate)):
                         status_code=403, detail="User has not purchased this product"
                     )
 
-                try:
-                    # Check if rating already exists
-                    cursor.execute(
-                        """
-                        SELECT 1 FROM chopchop.ratings
-                        WHERE ra_product_id = %s AND ra_owner_id = %s
-                    """,
-                        (str(rating.product_id), str(rating.owner_id)),
-                    )
+                # Check if rating already exists
+                cursor.execute(
+                    """
+                    SELECT 1 FROM chopchop.ratings
+                    WHERE ra_product_id = %s AND ra_owner_id = %s
+                """,
+                    (str(rating.product_id), str(rating.owner_id)),
+                )
 
-                    if cursor.fetchone():
-                        rating.update(cursor)
-                    else:
-                        rating.insert(cursor)
+                if cursor.fetchone():
+                    rating.update(cursor)
+                else:
+                    rating.insert(cursor)
 
-                    conn.commit()
-                    return {"message": "Rating submitted successfully"}
-
-                except Exception as e:
-                    conn.rollback()
-                    raise HTTPException(status_code=500, detail=str(e))
+                conn.commit()
+                return {"message": "Rating submitted successfully"}
 
     except Exception as e:
+        conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
